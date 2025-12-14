@@ -1,0 +1,35 @@
+# Build artifacts
+build/
+dist/
+plugin.dylib
+*.o
+*.a
+*.vcvplugin
+
+# Local development files (system-specific)
+Makefile.local
+CLAUDE.md
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+
+# Testing folder
+testing/
+
+# Archived docs
+docs/_archived/

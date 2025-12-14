@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="66.04mm" height="128.5mm" viewBox="0 0 66.04 128.5">
+  <!-- 13HP panel: 66.04mm width, 128.5mm height (VCV Rack standard) -->
+
+  <defs>
+    <!-- Background gradient - lighter tints in top third, smooth transition -->
+    <linearGradient id="panelGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#2e2e2e"/>
+      <stop offset="12%" style="stop-color:#282828"/>
+      <stop offset="33%" style="stop-color:#222222"/>
+      <stop offset="100%" style="stop-color:#1a1a1a"/>
+    </linearGradient>
+
+    <!-- Section container gradient (OLED style) -->
+    <linearGradient id="sectionGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a1a"/>
+      <stop offset="100%" style="stop-color:#141414"/>
+    </linearGradient>
+
+    <!-- Sub-container gradient (subtle depth) -->
+    <linearGradient id="subContainerGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#252525"/>
+      <stop offset="100%" style="stop-color:#1c1c1c"/>
+    </linearGradient>
+
+    <!-- Header bar gradient -->
+    <linearGradient id="headerGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#333333"/>
+      <stop offset="100%" style="stop-color:#282828"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Main panel background -->
+  <rect x="0" y="0" width="66.04" height="128.5" fill="url(#panelGradient)"/>
+
+  <!-- Panel border -->
+  <rect x="0.3" y="0.3" width="65.44" height="127.9" fill="none" stroke="#000000" stroke-width="0.6"/>
+
+  <!-- Compact bar behind title -->
+  <rect x="0.6" y="0.6" width="64.84" height="6.3" fill="#242424"/>
+
+  <!-- MAIN container (Y=8 to Y=117) -->
+  <rect x="2" y="8" width="62.04" height="109" rx="2" fill="url(#sectionGradient)" stroke="#3a3a3a" stroke-width="0.4"/>
+
+  <!-- SYNTH controls sub-container -->
+  <rect x="3" y="10" width="60.04" height="55.85" rx="1.5" fill="url(#subContainerGradient)" stroke="#2a2a2a" stroke-width="0.3"/>
+  <rect x="3.25" y="10.25" width="59.54" height="55.35" rx="1.25" fill="none" stroke="#6b4a20" stroke-width="0.15"/>
+
+  <!-- Compact display -->
+  <rect x="10.5" y="35.23" width="45" height="10.16" rx="1" fill="#1a1a1a" stroke="#4a4a4a" stroke-width="0.2"/>
+  <rect x="10.65" y="35.38" width="44.7" height="9.86" rx="1" fill="none" stroke="#6b4a20" stroke-width="0.15"/>
+
+  <!-- SYNTH I/O: CV inputs -->
+  <rect x="3" y="66.85" width="44.76" height="49.15" rx="1.5" fill="url(#subContainerGradient)" stroke="#2a2a2a" stroke-width="0.3"/>
+  <rect x="3.25" y="67.1" width="44.26" height="48.65" rx="1.25" fill="none" stroke="#6b4a20" stroke-width="0.15"/>
+
+  <!-- SYNTH I/O: Audio output -->
+  <rect x="48.76" y="66.85" width="14.28" height="49.15" rx="1.5" fill="url(#subContainerGradient)" stroke="#2a2a2a" stroke-width="0.3"/>
+  <rect x="49.01" y="67.1" width="13.78" height="48.65" rx="1.25" fill="none" stroke="#6b4a20" stroke-width="0.15"/>
+
+</svg>

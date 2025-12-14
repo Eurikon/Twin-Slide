@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="67.732002mm"
+   height="16.4mm"
+   viewBox="0 0 67.732002 16.4"
+   version="1.1"
+   id="svg927"
+   inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
+   sodipodi:docname="KeyboardSmall.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview929"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     width="67.732mm"
+     inkscape:zoom="2.2129279"
+     inkscape:cx="106.87199"
+     inkscape:cy="29.146905"
+     inkscape:window-width="1920"
+     inkscape:window-height="1057"
+     inkscape:window-x="-8"
+     inkscape:window-y="1072"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs924">
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       y="0"
+       x="0"
+       height="16.4"
+       width="67.732193"
+       rx="0.35"
+       ry="0.35"
+       id="rect24"
+       style="fill:#333333;stroke-width:0.999996;paint-order:markers stroke fill" />
+    <path
+       d="m 15.774653,0.68 0.04096,7.02 2.978547,0.95 V 15.73 H 10.655954 V 8.66 l 3.033588,-0.95 V 0.68 Z m 28.66932,0 0.04224,7.02 2.978546,0.95 V 15.73 H 39.325274 V 8.66 l 3.034867,-0.95 V 0.68 Z m 7.431649,0 -0.04224,7.02 -2.977268,0.95 v 7.04 h 8.136929 V 8.66 l -3.03359,-0.95 V 0.68 Z m -45.6318095,0 0.04224,7.02 2.978548,0.95 V 15.73 H 1.1263935 V 8.66 l -0.0077,-7.98 h 3.041267 z m 16.9560895,0 -0.04224,7.02 -2.978548,0.95 V 15.73 H 28.31732 V 8.66 l 0.0064,-7.98 h -3.041267 z m 11.71451,0 0.04224,7.02 2.977268,0.95 V 15.73 H 29.796994 V 8.66 l -0.0077,-7.98 h 3.041267 z m 26.490771,0 -0.041,7.02 -2.97855,0.95 v 7.04 h 8.13693 V 8.66 l 0.006,-7.98 h -3.03999 z"
+       id="path26"
+       style="fill:#BF903C;stroke:#000000;stroke-width:0.265" />
+  </g>
+</svg>
