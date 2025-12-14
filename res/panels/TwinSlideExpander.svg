@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="40.64mm" height="128.5mm" viewBox="0 0 40.64 128.5">
+  <!-- 8HP panel: 40.64mm width, 128.5mm height (VCV Rack standard) -->
+
+  <defs>
+    <!-- Background gradient - lighter tints in top third, smooth transition -->
+    <linearGradient id="panelGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#2e2e2e"/>
+      <stop offset="12%" style="stop-color:#282828"/>
+      <stop offset="33%" style="stop-color:#222222"/>
+      <stop offset="100%" style="stop-color:#1a1a1a"/>
+    </linearGradient>
+
+    <!-- Section container gradient (OLED style) -->
+    <linearGradient id="sectionGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a1a"/>
+      <stop offset="100%" style="stop-color:#141414"/>
+    </linearGradient>
+
+    <!-- Sub-container gradient (subtle depth) -->
+    <linearGradient id="subContainerGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#252525"/>
+      <stop offset="100%" style="stop-color:#1c1c1c"/>
+    </linearGradient>
+
+    <!-- Header bar gradient -->
+    <linearGradient id="headerGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#333333"/>
+      <stop offset="100%" style="stop-color:#282828"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Main panel background -->
+  <rect x="0" y="0" width="40.64" height="128.5" fill="url(#panelGradient)"/>
+
+  <!-- Panel border -->
+  <rect x="0.3" y="0.3" width="40.04" height="127.9" fill="none" stroke="#000000" stroke-width="0.6"/>
+
+  <!-- Compact bar behind title -->
+  <rect x="0.6" y="0.6" width="39.44" height="6.3" fill="#242424"/>
+
+  <!-- MAIN container (Y=8 to Y=117) -->
+  <rect x="2" y="8" width="36.64" height="109" rx="2" fill="url(#sectionGradient)" stroke="#3a3a3a" stroke-width="0.4"/>
+
+  <!-- INPUT sub-container (jacks area) -->
+  <rect x="3" y="10" width="34.64" height="53.85" rx="1.5" fill="url(#subContainerGradient)" stroke="#2a2a2a" stroke-width="0.3"/>
+  <rect x="3.25" y="10.25" width="34.14" height="53.35" rx="1.25" fill="none" stroke="#6b4a20" stroke-width="0.15"/>
+
+  <!-- OUTPUT sub-container (jacks area) -->
+  <rect x="3" y="64.85" width="34.64" height="51.15" rx="1.5" fill="url(#subContainerGradient)" stroke="#2a2a2a" stroke-width="0.3"/>
+  <rect x="3.25" y="65.1" width="34.14" height="50.65" rx="1.25" fill="none" stroke="#6b4a20" stroke-width="0.15"/>
+
+</svg>
