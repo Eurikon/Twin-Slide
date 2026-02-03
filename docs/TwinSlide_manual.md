@@ -765,7 +765,7 @@ When hovering over the sequence display:
 
 ## Version History
 
-See [CHANGELOG.md](../../CHANGELOG.md) for complete version history.
+See [CHANGELOG.md](/master/CHANGELOG.md) for complete version history.
 
 ---
 
