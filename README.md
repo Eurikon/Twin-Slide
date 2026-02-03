@@ -1,19 +1,18 @@
 # Twin Slide
 
-Dual acid bass synthesizer for VCV Rack with integrated step sequencer.</br></br>
-![TwinSlide](/docs/img/twinslide.heic)
+Dual acid bass synthesizer for VCV Rack with integrated step sequencer, expander and a mono bass voice module.</br>
 
 ---
 
 ## Overview
 
 **Twisted Cable - Twin Slide**
-is a dual acid bass synthesizer module for VCV Rack, featuring twin sequencers driving twin synth voices.
-
-The design builds upon the proven Phrase Seq 32 from ImpromptuModular.
-Modified to two parallel tracks inside each sequence,
-enabling simultaneous dual-voice (and/or duophonic) playback.
-And the Open303 source code for the bass synth, based on circuit-accurate modelling.
+is a dual acid bass synthesizer module for VCV Rack, featuring twin sequencers driving twin synth voices. </br></br>
+![TwinSlide](/docs/img/twinslide.heic)
+</br>
+The design builds upon the proven Phrase Seq 32 from ImpromptuModular.</br>
+Modified to two parallel tracks inside each sequence, enabling simultaneous dual-voice (and/or duophonic) playback.</br>
+And the Open303 source code for the bass synth, based on circuit-accurate modelling.</br></br>
 
 ```
 Song → Phrases → Sequences → [Track A + Track B] → Steps (16 each)
