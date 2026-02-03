@@ -1,6 +1,7 @@
 # Twin Slide
 
-Dual acid bass synthesizer for VCV Rack with integrated step sequencer.
+Dual acid bass synthesizer for VCV Rack with integrated step sequencer.</br></br>
+![TwinSlide](/docs/img/twinslide.heic)
 
 ---
 
