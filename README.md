@@ -37,7 +37,7 @@ Main module containing dual 16-step sequencers and dual synth voices.
 - Slide rate knob for portamento speed control
 
 **Synth Voice (x2):**
-- PolyBLEP oscillator (saw/square with tanh shaping)
+- MipMapped wavetable saw/square with tanh soft saturation
 - Diode ladder filter (circuit-accurate 303 emulation)
 - RC-filter exponential envelope
 - Pitch slew for slide/portamento
