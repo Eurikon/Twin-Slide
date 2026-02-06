@@ -68,6 +68,7 @@ struct TwinSlide : Module {
 		// Per-step release parameters (added at end for backwards compatibility)
 		REL_PARAM,
 		REL_KNOB_PARAM,
+		CLR_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -196,6 +197,11 @@ struct TwinSlide : Module {
 	int rndpScaleIndex;          // -1 = random, 0-4 = specific scale
 	uint32_t instanceSalt;       // Random per module instance, makes seeds unique
 
+	// Randomizer exclusion flags (UI-only, not saved)
+	enum RndExcl { RND_PITCH, RND_GATESHAPE, RND_GATE, RND_TIE, RND_REL, RND_ACC, RND_COND, RND_PROB, RND_SLIDE, NUM_RND_EXCL };
+	bool rndExclude[NUM_RND_EXCL] = {};
+	void clearRndExclusions() { for (int i = 0; i < NUM_RND_EXCL; i++) rndExclude[i] = false; }
+
 	// No need to save, with reset
 	int displayState;
 	int lastTrackSwitch;// track previous switch state to detect manual changes
@@ -268,6 +274,7 @@ struct TwinSlide : Module {
 	Trigger attachedTrigger;
 	Trigger copyTrigger;
 	Trigger pasteTrigger;
+	Trigger clrTrigger;
 	Trigger modeTrigger;
 	Trigger transposeTrigger;
 	Trigger tiedTrigger;
@@ -344,6 +351,7 @@ struct TwinSlide : Module {
 		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
 		configParam(COPY_PARAM, 0.0f, 1.0f, 0.0f, "Copy");
 		configParam(PASTE_PARAM, 0.0f, 1.0f, 0.0f, "Paste");
+		configParam(CLR_PARAM, 0.0f, 1.0f, 0.0f, "Clear track");
 		configSwitch(CPMODE_PARAM, 0.0f, 2.0f, 0.0f, "COPY", {"4", "8", "All"});// 0.0f is top position
 
 		configParam(GATE_PARAM, 0.0f, 1.0f, 0.0f, "Gate");
@@ -428,6 +436,7 @@ struct TwinSlide : Module {
 
 	
 	void onReset() override final {
+		clearRndExclusions();
 		holdTiedNotes = true;
 		pulsesPerStep = 1;
 		running = false;
@@ -570,31 +579,45 @@ struct TwinSlide : Module {
 		// Generate track content
 		generateAcidPattern(params, steps, nullptr);
 
-		// Apply to selected track
+		// Apply to selected track (respecting exclusion flags)
 		for (int s = 0; s < 16; s++) {
-			cv[seqIndexEdit][track][s] = steps[s].cv;
+			if (!rndExclude[RND_PITCH])
+				cv[seqIndexEdit][track][s] = steps[s].cv;
 
 			StepAttributes& attr = attributes[seqIndexEdit][track][s];
-			attr.clear();
-			attr.setGate(steps[s].gate);
-			attr.setAccent(steps[s].accent);
-			attr.setSlide(steps[s].slide);
-			// Additional attributes (only for steps with gates)
-			if (steps[s].gate) {
-				if (s != 0 && random::u32() % 20 == 0) attr.setGateP(true);  // 5% chance, never on step 1
-				static const int gateShapes[] = {0, 5, 11};
-				attr.setGateMode(gateShapes[random::u32() % 3]);  // 25%, FUL, or TRIG
-				if (s != 0 && random::u32() % 20 == 0) {  // 5% chance release (never on step 1)
-					attr.setRelease(true);
-					releaseTime[seqIndexEdit][track][s] = 21.0f + random::uniform() * (250.0f - 21.0f);
-				} else {
-					attr.setRelease(false);
-					releaseTime[seqIndexEdit][track][s] = 21.0f;  // global default
+			if (!rndExclude[RND_GATE]) {
+				attr.setGate(steps[s].gate);
+			}
+			if (!rndExclude[RND_ACC])
+				attr.setAccent(steps[s].accent);
+			if (!rndExclude[RND_SLIDE])
+				attr.setSlide(steps[s].slide);
+			if (attr.getGate()) {
+				if (!rndExclude[RND_PROB]) {
+					if (s != 0 && random::u32() % 20 == 0) attr.setGateP(true);
 				}
-				if (s != 0 && random::u32() % 20 == 0) attr.setCond(1 + (random::u32() % 4));  // 5% chance, never on step 1
-				if (random::u32() % 20 == 0) attr.setTied(true);  // 5% chance
+				if (!rndExclude[RND_GATESHAPE]) {
+					static const int gateShapes[] = {0, 5, 11};
+					attr.setGateMode(gateShapes[random::u32() % 3]);
+				}
+				if (!rndExclude[RND_REL]) {
+					if (s != 0 && random::u32() % 20 == 0) {
+						attr.setRelease(true);
+						releaseTime[seqIndexEdit][track][s] = 21.0f + random::uniform() * (250.0f - 21.0f);
+					} else {
+						attr.setRelease(false);
+						releaseTime[seqIndexEdit][track][s] = 21.0f;
+					}
+				}
+				if (!rndExclude[RND_COND]) {
+					if (s != 0 && random::u32() % 20 == 0) attr.setCond(1 + (random::u32() % 4));
+				}
+				if (!rndExclude[RND_TIE] && !rndExclude[RND_GATE]) {
+					if (random::u32() % 20 == 0) attr.setTied(true);
+				}
 			}
 		}
+		// clearRndExclusions(); // TESTING: disabled for persistent exclusion testing
 	}
 
 
@@ -1183,6 +1206,23 @@ struct TwinSlide : Module {
 				}
 				else
 					attachedWarning = warningTimeTicks;
+			}
+
+			// Clear track button (sequence mode only)
+			if (clrTrigger.process(params[CLR_PARAM].getValue())) {
+				if (seqMode && !attached) {
+					int track = getEditTrack();
+					for (int s = 0; s < 16; s++) {
+						cv[seqIndexEdit][track][s] = 0.0f;
+						attributes[seqIndexEdit][track][s].init();
+						releaseTime[seqIndexEdit][track][s] = 100.0f;
+					}
+					trackLength[seqIndexEdit][track] = 16;
+					trackRunMode[seqIndexEdit][track] = MODE_FWD;
+					trackTranspose[seqIndexEdit][track] = 0;
+					trackRotate[seqIndexEdit][track] = 0;
+					trackClockDiv[seqIndexEdit][track] = 1;
+				}
 			}
 
 			// Step button presses
@@ -2893,6 +2933,25 @@ struct TwinSlideWidget : ModuleWidget {
 		}
 	};
 
+	struct DiceButton : widget::SvgWidget {
+		TwinSlide* module = NULL;
+		std::shared_ptr<window::Svg> svgNormal;
+		std::shared_ptr<window::Svg> svgPressed;
+		void onHover(const HoverEvent& e) override { e.consume(this); }
+		void onButton(const ButtonEvent& e) override {
+			if (e.button == GLFW_MOUSE_BUTTON_LEFT) {
+				if (e.action == GLFW_PRESS) {
+					setSvg(svgPressed);
+					if (module) module->randomizeTrack();
+				} else if (e.action == GLFW_RELEASE) {
+					setSvg(svgNormal);
+				}
+				e.consume(this);
+			}
+		}
+		void onDragEnd(const DragEndEvent& e) override { setSvg(svgNormal); }
+	};
+
 	struct ConditionButton : PushButton80 {
 		void appendContextMenu(Menu* menu) override {
 			TwinSlide* module = static_cast<TwinSlide*>(getParamQuantity()->module);
@@ -3231,6 +3290,7 @@ struct TwinSlideWidget : ModuleWidget {
 		// Copy/paste buttons
 		addParam(createParamCentered<LEDButtonSmall>(VecPx(362, 147), module, TwinSlide::COPY_PARAM));
 		addParam(createParamCentered<LEDButtonSmall>(VecPx(422, 147), module, TwinSlide::PASTE_PARAM));
+		addParam(createParamCentered<LEDButtonSmall>(VecPx(447, 147), module, TwinSlide::CLR_PARAM));
 		// Copy-paste mode switch (3 position)
 		addParam(createDynamicSwitchCentered<IMSwitch3H>(VecPx(392, 147), module, TwinSlide::CPMODE_PARAM, mode, svgPanel));
 
@@ -3257,15 +3317,70 @@ struct TwinSlideWidget : ModuleWidget {
 			}
 		};
 
-		ControlLabel* copyLabel = new ControlLabel("COPY");
-		copyLabel->box.pos = VecPx(358, 160);
+		// Clickable label for randomizer exclusion
+		struct RndExcludeLabel : OpaqueWidget {
+			std::string text;
+			TwinSlide* module = NULL;
+			int exclIndex = -1;
+			RndExcludeLabel(std::string t, int idx) : text(t), exclIndex(idx) {}
+			void onButton(const ButtonEvent& e) override {
+				if (e.button == GLFW_MOUSE_BUTTON_LEFT && e.action == GLFW_PRESS && module && exclIndex >= 0) {
+					module->rndExclude[exclIndex] = !module->rndExclude[exclIndex];
+					e.consume(this);
+				}
+			}
+			void draw(const DrawArgs& args) override {
+				// Dot matrix amber background
+				nvgFillColor(args.vg, nvgRGBA(0xe6, 0xb0, 0x60, 0x80));
+				float dotR = 0.5f;
+				float spacing = 2.0f;
+				for (float dy = spacing * 0.5f; dy < box.size.y; dy += spacing) {
+					for (float dx = spacing * 1.5f; dx < box.size.x - spacing; dx += spacing) {
+						nvgBeginPath(args.vg);
+						nvgCircle(args.vg, dx, dy, dotR);
+						nvgFill(args.vg);
+					}
+				}
+
+				bool dimmed = module && exclIndex >= 0 && module->rndExclude[exclIndex];
+				float cx = box.size.x * 0.5f;
+				float cy = box.size.y * 0.5f;
+				std::shared_ptr<Font> font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/Sono/static/Sono_Proportional-Medium.ttf"));
+				if (!font) return;
+				nvgFontFaceId(args.vg, font->handle);
+				nvgFontSize(args.vg, 10.0f);
+				nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+				nvgFillColor(args.vg, nvgRGB(0x00, 0x00, 0x00));
+				for (int dx = -1; dx <= 1; dx++) {
+					for (int dy = -1; dy <= 1; dy++) {
+						if (dx != 0 || dy != 0)
+							nvgText(args.vg, cx + dx * 0.5f, cy + dy * 0.5f, text.c_str(), NULL);
+					}
+				}
+				nvgFillColor(args.vg, dimmed ? nvgRGB(0xc0, 0xc0, 0xc0) : nvgRGB(0xff, 0xff, 0xff));
+				nvgText(args.vg, cx, cy, text.c_str(), NULL);
+			}
+		};
+
+		ControlLabel* rndLabel = new ControlLabel("RND");
+		rndLabel->box.pos = VecPx(337, 160);
+		rndLabel->box.size = VecPx(30, 10);
+		addChild(rndLabel);
+
+		ControlLabel* copyLabel = new ControlLabel("CPY");
+		copyLabel->box.pos = VecPx(362, 160);
 		copyLabel->box.size = VecPx(30, 10);
 		addChild(copyLabel);
 
-		ControlLabel* pasteLabel = new ControlLabel("PASTE");
-		pasteLabel->box.pos = VecPx(428, 160);
+		ControlLabel* pasteLabel = new ControlLabel("PST");
+		pasteLabel->box.pos = VecPx(422, 160);
 		pasteLabel->box.size = VecPx(35, 10);
 		addChild(pasteLabel);
+
+		ControlLabel* clrLabel = new ControlLabel("CLR");
+		clrLabel->box.pos = VecPx(447, 160);
+		clrLabel->box.size = VecPx(30, 10);
+		addChild(clrLabel);
 
 		ControlLabel* cpMode4Label = new ControlLabel("4");
 		cpMode4Label->box.pos = VecPx(382, 160);
@@ -3283,13 +3398,15 @@ struct TwinSlideWidget : ModuleWidget {
 		addChild(cpModeALabel);
 
 		// Key mode labels (NOTE above keynote button, GATE below keygate button)
-		ControlLabel* keyNoteLabel = new ControlLabel("NOTE");
-		keyNoteLabel->box.pos = VecPx(272, 85);
+		RndExcludeLabel* keyNoteLabel = new RndExcludeLabel("NOTE", TwinSlide::RND_PITCH);
+		keyNoteLabel->module = module;
+		keyNoteLabel->box.pos = VecPx(257, 80);
 		keyNoteLabel->box.size = VecPx(30, 10);
 		addChild(keyNoteLabel);
 
-		ControlLabel* keyGateLabel = new ControlLabel("GATE");
-		keyGateLabel->box.pos = VecPx(272, 149);
+		RndExcludeLabel* keyGateLabel = new RndExcludeLabel("GATE", TwinSlide::RND_GATESHAPE);
+		keyGateLabel->module = module;
+		keyGateLabel->box.pos = VecPx(257, 144);
 		keyGateLabel->box.size = VecPx(30, 10);
 		addChild(keyGateLabel);
 
@@ -3375,8 +3492,9 @@ struct TwinSlideWidget : ModuleWidget {
 		addChild(octM2Label);
 
 		// GATE label (aligned with PROB button below at X=30)
-		ControlLabel* gateLabel = new ControlLabel("GATE");
-		gateLabel->box.pos = VecPx(30, 170);
+		RndExcludeLabel* gateLabel = new RndExcludeLabel("GATE", TwinSlide::RND_GATE);
+		gateLabel->module = module;
+		gateLabel->box.pos = VecPx(15, 165);
 		gateLabel->box.size = VecPx(30, 10);
 		addChild(gateLabel);
 
@@ -3384,8 +3502,9 @@ struct TwinSlideWidget : ModuleWidget {
 		addParam(createDynamicParamCentered<PushButton80>(VecPx(30, 190), module, TwinSlide::GATE_PARAM, mode));
 		addChild(createLightCentered<SmallLight<WhiteLightTS>>(VecPx(30, 190), module, TwinSlide::GATE_LIGHT));
 		// TIE label (centered above PROB trimpot at X=62)
-		ControlLabel* tieLabel = new ControlLabel("TIE");
-		tieLabel->box.pos = VecPx(62, 170);
+		RndExcludeLabel* tieLabel = new RndExcludeLabel("TIE", TwinSlide::RND_TIE);
+		tieLabel->module = module;
+		tieLabel->box.pos = VecPx(47, 165);
 		tieLabel->box.size = VecPx(30, 10);
 		addChild(tieLabel);
 
@@ -3393,8 +3512,9 @@ struct TwinSlideWidget : ModuleWidget {
 		addParam(createDynamicParamCentered<PushButton80>(VecPx(62, 190), module, TwinSlide::TIE_PARAM, mode));
 		addChild(createLightCentered<SmallLight<WhiteLightTS>>(VecPx(62, 190), module, TwinSlide::TIE_LIGHT));
 		// REL label
-		ControlLabel* relLabel = new ControlLabel("REL");
-		relLabel->box.pos = VecPx(94, 170);
+		RndExcludeLabel* relLabel = new RndExcludeLabel("REL", TwinSlide::RND_REL);
+		relLabel->module = module;
+		relLabel->box.pos = VecPx(79, 165);
 		relLabel->box.size = VecPx(30, 10);
 		addChild(relLabel);
 		// REL button and light (per-step release)
@@ -3403,8 +3523,9 @@ struct TwinSlideWidget : ModuleWidget {
 		// REL knob (per-step release time)
 		addParam(createDynamicParamCentered<IMSmallKnob>(VecPx(126, 190), module, TwinSlide::REL_KNOB_PARAM, mode));
 		// ACC label (aligned with COND button below at X=158)
-		ControlLabel* accLabel = new ControlLabel("ACC");
-		accLabel->box.pos = VecPx(158, 170);
+		RndExcludeLabel* accLabel = new RndExcludeLabel("ACC", TwinSlide::RND_ACC);
+		accLabel->module = module;
+		accLabel->box.pos = VecPx(143, 165);
 		accLabel->box.size = VecPx(30, 10);
 		addChild(accLabel);
 
@@ -3413,8 +3534,9 @@ struct TwinSlideWidget : ModuleWidget {
 		addChild(createLightCentered<SmallLight<WhiteLightTS>>(VecPx(158, 190), module, TwinSlide::ACCENT_LIGHT));
 
 		// CON label (centered in container 3)
-		ControlLabel* conLabel = new ControlLabel("CON");
-		conLabel->box.pos = VecPx(158, 207);
+		RndExcludeLabel* conLabel = new RndExcludeLabel("CON", TwinSlide::RND_COND);
+		conLabel->module = module;
+		conLabel->box.pos = VecPx(143, 202);
 		conLabel->box.size = VecPx(30, 10);
 		addChild(conLabel);
 
@@ -3485,8 +3607,9 @@ struct TwinSlideWidget : ModuleWidget {
 		// ****** Bottom two rows ******
 
 		// PROB label (button+knob pair centered in container 1: button X=30, knob X=62)
-		ControlLabel* probLabel = new ControlLabel("PROB");
-		probLabel->box.pos = VecPx(30, 207);
+		RndExcludeLabel* probLabel = new RndExcludeLabel("PROB", TwinSlide::RND_PROB);
+		probLabel->module = module;
+		probLabel->box.pos = VecPx(15, 202);
 		probLabel->box.size = VecPx(30, 10);
 		addChild(probLabel);
 
@@ -3496,8 +3619,9 @@ struct TwinSlideWidget : ModuleWidget {
 		// Probability knob (10px clearance from button outer edge)
 		addParam(createDynamicParamCentered<IMSmallKnob>(VecPx(62, 227), module, TwinSlide::PROB_KNOB_PARAM, mode));
 		// SLIDE label (button+knob pair centered in container 2: button X=94, knob X=126)
-		ControlLabel* slideLabel = new ControlLabel("SLIDE");
-		slideLabel->box.pos = VecPx(94, 207);
+		RndExcludeLabel* slideLabel = new RndExcludeLabel("SLIDE", TwinSlide::RND_SLIDE);
+		slideLabel->module = module;
+		slideLabel->box.pos = VecPx(79, 202);
 		slideLabel->box.size = VecPx(30, 10);
 		addChild(slideLabel);
 
@@ -3508,6 +3632,14 @@ struct TwinSlideWidget : ModuleWidget {
 		addParam(createDynamicParamCentered<IMSmallKnob>(VecPx(126, 227), module, TwinSlide::SLIDE_KNOB_PARAM, mode));
 		// Clock input
 		addInput(createDynamicPortCentered<JackPort>(VecPx(392, 226), true, module, TwinSlide::CLOCK_INPUT, mode));
+		// Dice icon above clock input
+		DiceButton* diceIcon = new DiceButton;
+		diceIcon->module = module;
+		diceIcon->svgNormal = APP->window->loadSvg(asset::plugin(pluginInstance, "res/comp/fad-random-1dice.svg"));
+		diceIcon->svgPressed = APP->window->loadSvg(asset::plugin(pluginInstance, "res/comp/fad-random-1dice-pressed.svg"));
+		diceIcon->setSvg(diceIcon->svgNormal);
+		diceIcon->box.pos = VecPx(337 - 8.5f, 147 - 8.5f);
+		addChild(diceIcon);
 
 		// ****** Synth control labels ******
 		ControlLabel* drvLabel = new ControlLabel("DRV");
@@ -3716,6 +3848,7 @@ struct TwinSlideWidget : ModuleWidget {
 		tcLogo->box.pos = Vec(box.size.x / 2.f - 3.f, 355);
 		addChild(tcLogo);
 	}
+
 };
 
 Model *modelTwinSlide = createModel<TwinSlide, TwinSlideWidget>("TwinSlide");
