@@ -37,7 +37,7 @@ Song → Phrases → Sequences → [Track A + Track B] → Steps (16 each)
 - **32 sequences**, each containing 2 tracks × 16 steps
 - **Independent track settings**: length, run mode, transpose, rotate, clock division
 - **Dual synth voices** with complete 303-style synthesis chain
-- **60 HP total**: 40 HP main module + 8 HP expander + 12 HP MonoSlide
+- **61 HP total**: 40 HP main module + 8 HP expander + 13 HP MonoSlide
 
 ### Signal Flow
 
@@ -206,11 +206,11 @@ The COND button cycles through 5 conditions:
 
 | Condition | Symbol | Description |
 |-----------|--------|-------------|
-| 0 | -- | Always play |
-| 1 | 1- | Play on 1st loop only |
-| 2 | -2 | Play on 2nd loop only |
-| 3 | 12 | Play on 1st and 2nd loops |
-| 4 | ?? | 50% probability |
+| 0 | 1:1 | Always play (every step) |
+| 1 | 1:2 | Play every 2nd pass |
+| 2 | 1:4 | Play every 4th pass |
+| 3 | 1st | Play on first pass only |
+| 4 | !1st | Play on all passes except first |
 
 ### Gate Types
 
@@ -239,9 +239,9 @@ Each synth voice (A and B) has identical controls:
 | **Cutoff** | 0-100% | 50% | Filter cutoff frequency (314-2394 Hz) |
 | **Resonance** | 0-100% | 0% | Filter resonance/Q |
 | **Env Mod** | 0-100% | 50% | Envelope modulation depth |
-| **Decay** | 0-100% | 100% | Envelope decay time (200-2500 ms) |
+| **Decay** | 0-100% | 50% | Envelope decay time (200-2500 ms) |
 | **Accent** | 0-100% | 50% | Accent intensity |
-| **Drive** | 0-100% | 25% | Filter drive/saturation |
+| **Drive** | 0-100% | 75% | Filter drive/saturation |
 | **Fine Tune** | ±700 cents | 0 | Pitch fine tuning |
 | **Waveform** | Saw/Square | Saw | Oscillator waveform |
 | **Level** | 0-100% | 75% | Output level |
@@ -258,13 +258,13 @@ Each synth voice (A and B) has identical controls:
 
 Each voice contains a complete synthesis chain:
 
-1. **SlideOscillator** - MipMapped wavetable saw/square with tanh soft saturation
+1. **BlendOscillator303** - MipMapped wavetable saw/square with tanh soft saturation
 2. **TeeBeeFilter303** - 4-pole diode ladder filter (mystran/kunn coefficients)
 3. **AnalogEnvelope303** - RC-filter exponential envelope
 4. **LeakyIntegrator303** - Pitch slew for slide/portamento
 5. **DecayEnvelope303** - Dedicated accent decay envelope
 6. **EnvModScaler303** - Measured envelope-to-cutoff mapping
-7. **4x oversampling** in filter stage for aliasing reduction
+7. **2x oversampling** in filter stage for aliasing reduction
 
 ---
 
@@ -329,7 +329,7 @@ This allows smooth waveform transitions beyond the discrete switch positions.
 
 ### Indicator
 
-When all expert parameters are at default (0, 0, 0%, 0%, 0%), the submenu shows "303" indicating original behavior.
+When VCF Range, Decay Speed, Sustain, and Release are all at default (0, 0, 0%, 0%), the submenu shows "303" indicating original behavior. Blend is not included in this check.
 
 ---
 
@@ -564,7 +564,7 @@ The expander must be placed immediately to the **right** of the main Twin Slide 
 
 ## MonoSlide
 
-MonoSlide is a standalone 12HP 303 synth voice designed for external sequencing.
+MonoSlide is a standalone 13HP 303 synth voice designed for external sequencing.
 
 ### Overview
 
@@ -743,11 +743,11 @@ Combine with clock division for even more complex rhythmic interplay:
 
 | Specification | Value |
 |---------------|-------|
-| Module Widths | 40 HP (TwinSlide), 8 HP (Expander), 12 HP (MonoSlide) |
+| Module Widths | 40 HP (TwinSlide), 8 HP (Expander), 13 HP (MonoSlide) |
 | Audio Voltage | ±5V |
 | Pitch Standard | 1V/oct |
 | Gate/Trigger | 10V |
-| Oversampling | 4x in filter stage |
+| Oversampling | 2x in filter stage |
 | Voices | 2 monophonic (TwinSlide), 1 monophonic (MonoSlide) |
 
 ---
