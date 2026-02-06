@@ -258,7 +258,7 @@ Each synth voice (A and B) has identical controls:
 
 Each voice contains a complete synthesis chain:
 
-1. **SlideOscillator** - PolyBLEP saw/square with tanh soft saturation
+1. **SlideOscillator** - MipMapped wavetable saw/square with tanh soft saturation
 2. **TeeBeeFilter303** - 4-pole diode ladder filter (mystran/kunn coefficients)
 3. **AnalogEnvelope303** - RC-filter exponential envelope
 4. **LeakyIntegrator303** - Pitch slew for slide/portamento
