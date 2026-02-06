@@ -2893,6 +2893,24 @@ struct TwinSlideWidget : ModuleWidget {
 		}
 	};
 
+	struct ConditionButton : PushButton80 {
+		void appendContextMenu(Menu* menu) override {
+			TwinSlide* module = static_cast<TwinSlide*>(getParamQuantity()->module);
+			if (!module) return;
+			menu->addChild(new MenuSeparator());
+			static const std::string condNames[5] = {"1:1", "1:2", "1:4", "1st", "!1st"};
+			int currentCond = module->getEditStepCondition();
+			int track = module->getEditTrack();
+			int step = module->getEditStep();
+			for (int i = 0; i < 5; i++) {
+				menu->addChild(createCheckMenuItem(condNames[i], "",
+					[=]() { return currentCond == i; },
+					[=]() { module->attributes[module->seqIndexEdit][track][step].setCond(i); }
+				));
+			}
+		}
+	};
+
 	struct DataEncoder : IMBigKnobInf {
 		DataEncoder() {
 		}
@@ -3401,7 +3419,7 @@ struct TwinSlideWidget : ModuleWidget {
 		addChild(conLabel);
 
 		// Condition light and button (32px from SLIDE knob at X=126)
-		addParam(createDynamicParamCentered<PushButton80>(VecPx(158, 227), module, TwinSlide::COND_PARAM, mode));
+		addParam(createDynamicParamCentered<ConditionButton>(VecPx(158, 227), module, TwinSlide::COND_PARAM, mode));
 		addChild(createLightCentered<SmallLight<WhiteLightTS>>(VecPx(158, 227), module, TwinSlide::COND_LIGHT));
 
 		// FINE A label
