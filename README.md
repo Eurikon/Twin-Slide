@@ -97,7 +97,7 @@ CV/Gate I/O expander for external sequencer integration.
 - Link indicator (amber when connected)
 - Override internal sequencer with external CV/Gate
 
-### MonoSlide - 12HP
+### MonoSlide - 13HP
 
 Standalone 303 synth voice for external sequencing.
 
@@ -153,7 +153,7 @@ Standalone 303 synth voice for external sequencing.
                    └───────────────────────┘
 
 
-  MonoSlide (12 HP) - Standalone Voice
+  MonoSlide (13 HP) - Standalone Voice
 
   ┌────────────────────────────────────────────┐
   │             ┌────────────────────┐         │
@@ -188,10 +188,10 @@ Standalone 303 synth voice for external sequencing.
 
 - **Voltage Range**: ±5V audio, 1V/oct pitch, 10V triggers/gates
 - **Sample Rate**: Supports all VCV Rack sample rates
-- **Oversampling**: 4x in filter stage
+- **Oversampling**: 2x in filter stage
 - **Filter**: Circuit-accurate 303 diode ladder (mystran/kunn coefficients)
 - **Polyphony**: Dual monophonic voices (TwinSlide), single monophonic (MonoSlide)
-- **Module Widths**: 40 HP (TwinSlide), 8 HP (Expander), 12 HP (MonoSlide)
+- **Module Widths**: 40 HP (TwinSlide), 8 HP (Expander), 13 HP (MonoSlide)
 
 ## Attribution
 
