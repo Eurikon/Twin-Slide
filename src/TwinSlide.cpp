@@ -198,7 +198,6 @@ struct TwinSlide : Module {
 
 	// No need to save, with reset
 	int displayState;
-	int lastMenuState;// remember last menu state for auto-return (SEQ mode)
 	int lastTrackSwitch;// track previous switch state to detect manual changes
 	int lastSelectedMicroKey;// track previous selected micro key to sync knob
 	int lastTemperamentPreset;// track previous temperament preset to detect changes
@@ -485,7 +484,6 @@ struct TwinSlide : Module {
 	}
 	void resetNonJson(bool delayed) {// delay thread sensitive parts (i.e. schedule them so that process() will do them)
 		displayState = DISP_NORMAL;
-		lastMenuState = DISP_LENGTH;// default menu entry point
 		lastTrackSwitch = 0;
 		lastSelectedMicroKey = 0;
 		lastTemperamentPreset = 0;
@@ -1250,11 +1248,7 @@ struct TwinSlide : Module {
 				if (!attached) {
 					editingPpqn = 0l;
 					if (displayState == DISP_NORMAL || displayState == DISP_TRANSPOSE || displayState == DISP_ROTATE) {
-						// Restore last menu state (song mode: CLOCKDIV not valid, default to LENGTH)
-						if (!seqMode && lastMenuState == DISP_CLOCKDIV)
-							displayState = DISP_LENGTH;
-						else
-							displayState = lastMenuState;
+						displayState = DISP_LENGTH;
 						revertDisplay = lengthDisplayTimeTicks;
 					}
 					else if (displayState == DISP_LENGTH) {
@@ -1262,12 +1256,12 @@ struct TwinSlide : Module {
 						revertDisplay = lengthDisplayTimeTicks;
 					}
 					else if (displayState == DISP_MODE) {
-						displayState = seqMode ? DISP_CLOCKDIV : DISP_LENGTH;
-						revertDisplay = lengthDisplayTimeTicks;
-					}
-					else if (displayState == DISP_CLOCKDIV) {
-						displayState = DISP_LENGTH;
-						revertDisplay = lengthDisplayTimeTicks;
+						if (seqMode) {
+							displayState = DISP_CLOCKDIV;
+							revertDisplay = lengthDisplayTimeTicks;
+						}
+						else
+							displayState = DISP_NORMAL;
 					}
 					else
 						displayState = DISP_NORMAL;
@@ -2118,12 +2112,8 @@ struct TwinSlide : Module {
 				editingPpqn = editGateLengthTimeTicks;
 			}
 			if (revertDisplay > 0l) {
-				if (revertDisplay == 1) {
-					// Remember menu state before reverting (both SEQ and SONG modes)
-					if (displayState == DISP_LENGTH || displayState == DISP_MODE || (seqMode && displayState == DISP_CLOCKDIV))
-						lastMenuState = displayState;
+				if (revertDisplay == 1)
 					displayState = DISP_NORMAL;
-				}
 				revertDisplay--;
 			}
 		}// lightRefreshCounter
