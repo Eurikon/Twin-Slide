@@ -182,6 +182,7 @@ struct TwinSlide : Module {
 		float sustain = 0.0f;     // 0-1, default 0 (no sustain)
 		float release = 0.0f;     // 0-1, default 0 (instant)
 		float blend = 0.0f;       // 0-1, saw to square blend
+		float bassComp = 1.0f;    // 0-1, bass compensation (1 = 303 default, 0 = full bass preserved)
 	};
 	ExpertSettings expertA, expertB;
 	// RNDP (Acid) pattern generation settings
@@ -728,6 +729,7 @@ struct TwinSlide : Module {
 		json_object_set_new(expertAJ, "sustain", json_real(expertA.sustain));
 		json_object_set_new(expertAJ, "release", json_real(expertA.release));
 		json_object_set_new(expertAJ, "blend", json_real(expertA.blend));
+		json_object_set_new(expertAJ, "bassComp", json_real(expertA.bassComp));
 		json_object_set_new(rootJ, "expertA", expertAJ);
 
 		json_t *expertBJ = json_object();
@@ -736,6 +738,7 @@ struct TwinSlide : Module {
 		json_object_set_new(expertBJ, "sustain", json_real(expertB.sustain));
 		json_object_set_new(expertBJ, "release", json_real(expertB.release));
 		json_object_set_new(expertBJ, "blend", json_real(expertB.blend));
+		json_object_set_new(expertBJ, "bassComp", json_real(expertB.bassComp));
 		json_object_set_new(rootJ, "expertB", expertBJ);
 
 		json_object_set_new(rootJ, "rndp2Density", json_integer(rndp2Density));
@@ -873,6 +876,8 @@ struct TwinSlide : Module {
 			if (releaseJ) expertA.release = json_number_value(releaseJ);
 			json_t *blendJ = json_object_get(expertAJ, "blend");
 			if (blendJ) expertA.blend = json_number_value(blendJ);
+			json_t *bassCompJ = json_object_get(expertAJ, "bassComp");
+			if (bassCompJ) expertA.bassComp = json_number_value(bassCompJ);
 		}
 
 		json_t *expertBJ = json_object_get(rootJ, "expertB");
@@ -887,6 +892,8 @@ struct TwinSlide : Module {
 			if (releaseJ) expertB.release = json_number_value(releaseJ);
 			json_t *blendJ = json_object_get(expertBJ, "blend");
 			if (blendJ) expertB.blend = json_number_value(blendJ);
+			json_t *bassCompJ = json_object_get(expertBJ, "bassComp");
+			if (bassCompJ) expertB.bassComp = json_number_value(bassCompJ);
 		}
 
 		json_t *rndp2DensityJ = json_object_get(rootJ, "rndp2Density");
@@ -1863,7 +1870,8 @@ struct TwinSlide : Module {
 			for (int t = 0; t < 2; t++) {
 				float audio = voice[t].process(pitch[t], gate[t], accent[t], slide[t],
 				                               cutoff[t], cutoffCv[t], res[t], envMod[t], decay[t], accentAmt[t], drive[t], fine[t], expert[t]->blend, slideTime,
-				                               expert[t]->vcfRange, expert[t]->decayRange, expert[t]->sustain, latchedReleaseAmt[t]);
+				                               expert[t]->vcfRange, expert[t]->decayRange, expert[t]->sustain, latchedReleaseAmt[t],
+				                               expert[t]->bassComp);
 				float level = params[LEVEL_PARAMS[t]].getValue();
 				outputs[AUDIO_OUTPUTS[t]].setVoltage(audio * level);
 			}
@@ -2811,7 +2819,8 @@ struct TwinSlideWidget : ModuleWidget {
 		menu->addChild(createMenuLabel("Synth settings"));
 
 		bool is303A = (module->expertA.vcfRange == 0.0f && module->expertA.decayRange == 0.0f &&
-		               module->expertA.sustain == 0.0f && module->expertA.release == 0.0f);
+		               module->expertA.sustain == 0.0f && module->expertA.release == 0.0f &&
+		               module->expertA.bassComp == 1.0f);
 		menu->addChild(createSubmenuItem("Expert Mode A", is303A ? "303" : "", [=](Menu* menu) {
 			// VCF Range slider (-1 = bass, 0 = original 303)
 			menu->addChild(new ExpertSlider(
@@ -2845,11 +2854,16 @@ struct TwinSlideWidget : ModuleWidget {
 				&module->expertA.blend, 0.0f, 0.0f, 1.0f, "Blend",
 				[](float v) { return string::f("%.0f%% Sqr", v * 100.0f); }
 			));
+			menu->addChild(new ExpertSlider(
+				&module->expertA.bassComp, 1.0f, 0.0f, 1.0f, "Bass Comp",
+				[](float v) { return string::f("%.0f%%", (1.0f - v) * 100.0f); }
+			));
 		}));
 
 		// Expert Mode B
 		bool is303B = (module->expertB.vcfRange == 0.0f && module->expertB.decayRange == 0.0f &&
-		               module->expertB.sustain == 0.0f && module->expertB.release == 0.0f);
+		               module->expertB.sustain == 0.0f && module->expertB.release == 0.0f &&
+		               module->expertB.bassComp == 1.0f);
 		menu->addChild(createSubmenuItem("Expert Mode B", is303B ? "303" : "", [=](Menu* menu) {
 			// VCF Range slider (-1 = bass, 0 = original 303)
 			menu->addChild(new ExpertSlider(
@@ -2882,6 +2896,10 @@ struct TwinSlideWidget : ModuleWidget {
 			menu->addChild(new ExpertSlider(
 				&module->expertB.blend, 0.0f, 0.0f, 1.0f, "Blend",
 				[](float v) { return string::f("%.0f%% Sqr", v * 100.0f); }
+			));
+			menu->addChild(new ExpertSlider(
+				&module->expertB.bassComp, 1.0f, 0.0f, 1.0f, "Bass Comp",
+				[](float v) { return string::f("%.0f%%", (1.0f - v) * 100.0f); }
 			));
 		}));
 

@@ -1318,7 +1318,8 @@ struct SynthVoice {
 	float process(float pitch, bool gate, bool accent, bool slide,
 	              float cutoff, float cutoffCv, float resonance, float envMod,
 	              float decay, float accentAmt, float drive, float fineTune, float blend, float slideTime,
-	              float vcfRangeShift, float decayRangeShift, float sustainLevel, float releaseAmt) {
+	              float vcfRangeShift, float decayRangeShift, float sustainLevel, float releaseAmt,
+	              float bassComp = 1.0f) {
 
 		float sampleTime = 1.0f / sampleRate;
 
@@ -1420,6 +1421,8 @@ struct SynthVoice {
 
 		cutoffHz = clamp(cutoffHz, 20.f, 20000.f);
 		filter.setCutoff(cutoffHz);
+
+		filter.feedbackHighpass.setCutoff(150.0 + (1.0 - (double)bassComp) * 350.0);
 
 		float oversampleTime = sampleTime / OVERSAMPLE;
 		float filterOut = 0.f;
