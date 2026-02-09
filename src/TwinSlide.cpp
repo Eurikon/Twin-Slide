@@ -439,7 +439,7 @@ struct TwinSlide : Module {
 	void onReset() override final {
 		clearRndExclusions();
 		holdTiedNotes = true;
-		pulsesPerStep = 1;
+		pulsesPerStep = 24;
 		running = false;
 		runModeSong = MODE_FWD;
 		stepIndexEdit = 0;
@@ -1873,7 +1873,15 @@ struct TwinSlide : Module {
 				                               expert[t]->vcfRange, expert[t]->decayRange, expert[t]->sustain, latchedReleaseAmt[t],
 				                               expert[t]->bassComp);
 				float level = params[LEVEL_PARAMS[t]].getValue();
-				outputs[AUDIO_OUTPUTS[t]].setVoltage(audio * level);
+				float out = audio * std::min(level, 0.75f) / 0.75f;
+				if (level > 0.75f) {
+					float satAmt = (level - 0.75f) / 0.25f;
+					float satDrive = 1.0f + satAmt * 3.0f;
+					float normalized = out / 5.0f;
+					normalized = std::tanh(normalized * satDrive) / std::tanh(satDrive);
+					out = normalized * 5.0f;
+				}
+				outputs[AUDIO_OUTPUTS[t]].setVoltage(clamp(out, -10.f, 10.f));
 			}
 		}
 
@@ -2996,7 +3004,7 @@ struct TwinSlideWidget : ModuleWidget {
 			if (paramQuantity) {
 				TwinSlide* module = static_cast<TwinSlide*>(paramQuantity->module);
 				if (module->editingPpqn != 0) {
-					module->pulsesPerStep = 1;
+					module->pulsesPerStep = 24;
 					//editingPpqn = editGateLengthTimeTicks;
 				}
 				else if (module->displayState == TwinSlide::DISP_MODE) {

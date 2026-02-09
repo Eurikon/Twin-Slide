@@ -1396,8 +1396,8 @@ struct SynthVoice {
 
 		float vcaOut = oscOut * envLevel;
 
-		float input = vcaOut / 5.0f;
-		float gain = std::pow(1.f + drive, 5);
+		float input = vcaOut;
+		float gain = 1.0f + drive * 1.0f;
 		input *= gain;
 		input += 1e-6f * (2.f * random::uniform() - 1.f);
 
@@ -1433,6 +1433,6 @@ struct SynthVoice {
 		}
 		filterOut = (float)postFilterHPF.process(filterOut);
 
-		return 5.f * filterOut;
+		return 2.5f * filterOut;
 	}
 };

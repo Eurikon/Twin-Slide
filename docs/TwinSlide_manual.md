@@ -123,7 +123,7 @@ Short press cycles through display modes:
 2. **Run Mode** - Select playback pattern
 3. **Clock Div** - Set clock division (sequence mode only)
 
-Long press (hold): Access PPQN (pulses per quarter note) setting.
+Long press (hold): Access PPQN (pulses per quarter note) setting. Available values: 1, 4, 6, 12, 24. Default is 24 PPS. TwinSlide expects a 96 PPQN clock source for 16th note step resolution at 24 PPS.
 
 ### Transpose/Rotate Button (Left of Encoder)
 
