@@ -53,6 +53,7 @@ struct MonoSlide : Module {
 	float sustain = 0.0f;
 	float release = 0.0f;
 	float blend = 0.0f;
+	float bassComp = 1.0f;
 	int lastTouchedParam = CUTOFF_PARAM;
 
 	MonoSlide() {
@@ -89,6 +90,7 @@ struct MonoSlide : Module {
 		sustain = 0.0f;
 		release = 0.0f;
 		blend = 0.0f;
+		bassComp = 1.0f;
 	}
 
 	json_t* dataToJson() override {
@@ -99,6 +101,7 @@ struct MonoSlide : Module {
 		json_object_set_new(rootJ, "sustain", json_real(sustain));
 		json_object_set_new(rootJ, "release", json_real(release));
 		json_object_set_new(rootJ, "blend", json_real(blend));
+		json_object_set_new(rootJ, "bassComp", json_real(bassComp));
 		return rootJ;
 	}
 
@@ -115,6 +118,8 @@ struct MonoSlide : Module {
 		if (releaseJ) release = json_number_value(releaseJ);
 		json_t* blendJ = json_object_get(rootJ, "blend");
 		if (blendJ) blend = json_number_value(blendJ);
+		json_t* bassCompJ = json_object_get(rootJ, "bassComp");
+		if (bassCompJ) bassComp = json_number_value(bassCompJ);
 	}
 
 	void onSampleRateChange() override {
@@ -148,8 +153,17 @@ struct MonoSlide : Module {
 
 		float audio = voice.process(pitch, gate, accent, slide,
 		                            cutoff, cutoffCv, res, envMod, decay, accentAmt, drive, fine, blend, slideTime,
-		                            vcfRange, decayRange, sustain, release);
-		outputs[AUDIO_OUTPUT].setVoltage(audio * level);
+		                            vcfRange, decayRange, sustain, release,
+		                            bassComp);
+		float out = audio * std::min(level, 0.75f) / 0.75f;
+		if (level > 0.75f) {
+			float satAmt = (level - 0.75f) / 0.25f;
+			float satDrive = 1.0f + satAmt * 3.0f;
+			float normalized = out / 5.0f;
+			normalized = std::tanh(normalized * satDrive) / std::tanh(satDrive);
+			out = normalized * 5.0f;
+		}
+		outputs[AUDIO_OUTPUT].setVoltage(clamp(out, -10.f, 10.f));
 	}
 };
 
@@ -770,6 +784,10 @@ struct MonoSlideWidget : ModuleWidget {
 			menu->addChild(new ExpertSlider(
 				&module->slideTime, 0.75f, 0.0f, 2.0f, "Slide Time",
 				[](float v) { return string::f("%.0f ms", v * 50.0f); }
+			));
+			menu->addChild(new ExpertSlider(
+				&module->bassComp, 1.0f, 0.0f, 1.0f, "Bass Comp",
+				[](float v) { return string::f("%.0f%%", (1.0f - v) * 100.0f); }
 			));
 		}));
 	}
