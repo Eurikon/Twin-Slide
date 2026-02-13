@@ -132,7 +132,7 @@ struct MonoSlide : Module {
 		float pitch = inputs[CV_INPUT].getVoltage();
 		bool gate = inputs[GATE_INPUT].getVoltage() >= 1.0f;
 		bool slide = inputs[SLIDE_INPUT].getVoltage() >= 1.0f;
-		bool accent = clamp(params[ACCENT_PARAM].getValue() + clamp(inputs[ACCENT_INPUT].getVoltage(), -10.f, 10.f) * 0.1f, 0.f, 1.f) > 0.7f;
+		bool accent = inputs[ACCENT_INPUT].getVoltage() >= 1.0f;
 
 		float cutoff = params[CUTOFF_PARAM].getValue();
 		float cutoffCv = clamp(inputs[CUTOFF_INPUT].getVoltage(), -10.f, 10.f);

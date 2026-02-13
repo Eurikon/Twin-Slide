@@ -1285,16 +1285,16 @@ struct SynthVoice {
 	static constexpr float SLIDE_DECAY_MAX_MS = 2500.0f;
 	static constexpr float VCF_CUTOFF_MIN = 314.0f;
 	static constexpr float VCF_CUTOFF_MAX = 2394.0f;
-	static constexpr int OVERSAMPLE = 2;
+	static constexpr int OVERSAMPLE = 4;
 
 	void setSampleRate(double sr) {
 		if (sr <= 0.0) return;
 		sampleRate = sr;
-		wavetableOsc.setSampleRate(sr);
+		wavetableOsc.setSampleRate(sr * OVERSAMPLE);
 		wavetableOsc.initTables();
-		filter.setSampleRate(sr * OVERSAMPLE);  // 2x oversampling
+		filter.setSampleRate(sr * OVERSAMPLE);
 		pitchSlew.setSampleRate(sr);
-		preFilterHPF.setSampleRate(sr * OVERSAMPLE);  // 2x oversampling
+		preFilterHPF.setSampleRate(sr * OVERSAMPLE);
 		postFilterHPF.setSampleRate(sr);
 		accentDecayEnv.setSampleRate(sr);
 
@@ -1338,7 +1338,6 @@ struct SynthVoice {
 
 		wavetableOsc.setFrequency(vcoFreq);
 		wavetableOsc.setBlend(blend);
-		float oscOut = wavetableOsc.getSample();
 
 		bool newNote = gate && !prevGate;
 		prevGate = gate;
@@ -1394,12 +1393,7 @@ struct SynthVoice {
 			envLevel = clamp(envLevel, 0.0f, 1.5f);
 		}
 
-		float vcaOut = oscOut * envLevel;
-
-		float input = vcaOut;
 		float gain = 1.0f + drive * 1.0f;
-		input *= gain;
-		input += 1e-6f * (2.f * random::uniform() - 1.f);
 
 		filter.resonance = std::pow(resonance, 2) * 10.f;
 
@@ -1427,6 +1421,9 @@ struct SynthVoice {
 		float oversampleTime = sampleTime / OVERSAMPLE;
 		float filterOut = 0.f;
 		for (int i = 0; i < OVERSAMPLE; i++) {
+			float oscOut = wavetableOsc.getSample();
+			float input = oscOut * envLevel * gain;
+			input += 1e-6f * (2.f * random::uniform() - 1.f);
 			float hpfInput = (float)preFilterHPF.process(input);
 			filter.process(hpfInput, oversampleTime);
 			filterOut = (float)antiAliasFilter.process(filter.lowpass);
