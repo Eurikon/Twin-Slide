@@ -38,7 +38,7 @@ Main module containing dual 16-step sequencers and dual synth voices.
 
 **Synth Voice (x2):**
 - MipMapped wavetable saw/square with tanh soft saturation
-- Diode ladder filter (circuit-accurate 303 emulation)
+- 1+3 pole ladder filter (Open303 variation of Moog ladder, mystran/kunn coefficients)
 - RC-filter exponential envelope
 - Pitch slew for slide/portamento
 - Accent with dedicated decay envelope
@@ -188,8 +188,8 @@ Standalone 303 synth voice for external sequencing.
 
 - **Voltage Range**: ±5V audio, 1V/oct pitch, 10V triggers/gates
 - **Sample Rate**: Supports all VCV Rack sample rates
-- **Oversampling**: 2x in filter stage
-- **Filter**: Circuit-accurate 303 diode ladder (mystran/kunn coefficients)
+- **Oversampling**: 4x (oscillator, pre-filter highpass, filter)
+- **Filter**: Open303 1+3 pole ladder filter (Moog ladder variation, mystran/kunn coefficients)
 - **Polyphony**: Dual monophonic voices (TwinSlide), single monophonic (MonoSlide)
 - **Module Widths**: 40 HP (TwinSlide), 8 HP (Expander), 13 HP (MonoSlide)
 

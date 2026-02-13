@@ -22,6 +22,7 @@ struct TwinSlideExpander : Module {
 		GATEB_INPUT,
 		SLIDEB_INPUT,
 		FINEB_INPUT,
+		TRANSPOSE_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -31,6 +32,8 @@ struct TwinSlideExpander : Module {
 		CVB_OUTPUT,
 		GATEB_OUTPUT,
 		SLIDEB_OUTPUT,
+		ACCA_OUTPUT,
+		ACCB_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -54,6 +57,7 @@ struct TwinSlideExpander : Module {
 		configInput(GATEB_INPUT, "Track B Gate");
 		configInput(SLIDEB_INPUT, "Track B Slide");
 		configInput(FINEB_INPUT, "Track B Fine Tune CV");
+		configInput(TRANSPOSE_INPUT, "Transpose CV");
 
 		configOutput(CVA_OUTPUT, "Track A CV");
 		configOutput(GATEA_OUTPUT, "Track A Gate");
@@ -61,6 +65,8 @@ struct TwinSlideExpander : Module {
 		configOutput(CVB_OUTPUT, "Track B CV");
 		configOutput(GATEB_OUTPUT, "Track B Gate");
 		configOutput(SLIDEB_OUTPUT, "Track B Slide");
+		configOutput(ACCA_OUTPUT, "Track A Accent");
+		configOutput(ACCB_OUTPUT, "Track B Accent");
 
 		leftExpander.producerMessage = leftMessages[0];
 		leftExpander.consumerMessage = leftMessages[1];
@@ -92,6 +98,7 @@ struct TwinSlideExpander : Module {
 			toMother[14] = inputs[GATEB_INPUT].isConnected() ? 1.0f : 0.0f;
 			toMother[15] = inputs[SLIDEB_INPUT].isConnected() ? 1.0f : 0.0f;
 			toMother[16] = inputs[FINEB_INPUT].isConnected() ? 1.0f : 0.0f;
+			toMother[17] = clamp(inputs[TRANSPOSE_INPUT].getVoltage(), -10.f, 10.f);
 
 			// REQUEST FLIP on mother's right side
 			leftExpander.module->rightExpander.messageFlipRequested = true;
@@ -104,6 +111,8 @@ struct TwinSlideExpander : Module {
 			outputs[CVB_OUTPUT].setVoltage(fromMother[3]);
 			outputs[GATEB_OUTPUT].setVoltage(fromMother[4]);
 			outputs[SLIDEB_OUTPUT].setVoltage(fromMother[5]);
+			outputs[ACCA_OUTPUT].setVoltage(fromMother[6]);
+			outputs[ACCB_OUTPUT].setVoltage(fromMother[7]);
 		}
 		else {
 			outputs[CVA_OUTPUT].setVoltage(0.0f);
@@ -112,6 +121,8 @@ struct TwinSlideExpander : Module {
 			outputs[CVB_OUTPUT].setVoltage(0.0f);
 			outputs[GATEB_OUTPUT].setVoltage(0.0f);
 			outputs[SLIDEB_OUTPUT].setVoltage(0.0f);
+			outputs[ACCA_OUTPUT].setVoltage(0.0f);
+			outputs[ACCB_OUTPUT].setVoltage(0.0f);
 		}
 
 		// Smooth fade for connection indicator (200ms fade time)
@@ -205,8 +216,16 @@ struct TwinSlideExpanderWidget : ModuleWidget {
 		slideBInLabel->box.pos = Vec(colRight, inLabel3);
 		addChild(slideBInLabel);
 
-		// FINE inputs (centered between A and B columns)
+		// Center column (between A and B)
 		static const float colCenter = 61.f;  // (colLeft + colRight) / 2
+
+		// Transpose input (center column, CV row)
+		addInput(createInputCentered<DarkPJ301MPort>(Vec(colCenter, inRow1), module, TwinSlideExpander::TRANSPOSE_INPUT));
+		ControlLabel* transLabel = new ControlLabel("TRANS");
+		transLabel->box.pos = Vec(colCenter, inLabel1);
+		addChild(transLabel);
+
+		// FINE inputs
 		addInput(createInputCentered<DarkPJ301MPort>(Vec(colCenter, inRow2), module, TwinSlideExpander::FINEA_INPUT));
 		addInput(createInputCentered<DarkPJ301MPort>(Vec(colCenter, inRow3), module, TwinSlideExpander::FINEB_INPUT));
 
@@ -217,6 +236,16 @@ struct TwinSlideExpanderWidget : ModuleWidget {
 		ControlLabel* fineBLabel = new ControlLabel("FINE B");
 		fineBLabel->box.pos = Vec(colCenter, inLabel3);
 		addChild(fineBLabel);
+
+		// Accent outputs (center column, gate and slide rows)
+		addOutput(createOutputCentered<DarkPJ301MPort>(Vec(colCenter, outRow2), module, TwinSlideExpander::ACCA_OUTPUT));
+		addOutput(createOutputCentered<DarkPJ301MPort>(Vec(colCenter, outRow3), module, TwinSlideExpander::ACCB_OUTPUT));
+		ControlLabel* accALabel = new ControlLabel("ACC A");
+		accALabel->box.pos = Vec(colCenter, outLabel2);
+		addChild(accALabel);
+		ControlLabel* accBLabel = new ControlLabel("ACC B");
+		accBLabel->box.pos = Vec(colCenter, outLabel3);
+		addChild(accBLabel);
 
 		// OUTPUT section - all 6 outputs (Track A left, Track B right)
 		addOutput(createOutputCentered<DarkPJ301MPort>(Vec(colLeft, outRow1), module, TwinSlideExpander::CVA_OUTPUT));

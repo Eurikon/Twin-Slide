@@ -259,12 +259,12 @@ Each synth voice (A and B) has identical controls:
 Each voice contains a complete synthesis chain:
 
 1. **BlendOscillator303** - MipMapped wavetable saw/square with tanh soft saturation
-2. **TeeBeeFilter303** - 4-pole diode ladder filter (mystran/kunn coefficients)
+2. **TeeBeeFilter303** - 1+3 pole ladder filter (Open303 Moog ladder variation, mystran/kunn coefficients)
 3. **AnalogEnvelope303** - RC-filter exponential envelope
 4. **LeakyIntegrator303** - Pitch slew for slide/portamento
 5. **DecayEnvelope303** - Dedicated accent decay envelope
 6. **EnvModScaler303** - Measured envelope-to-cutoff mapping
-7. **2x oversampling** in filter stage for aliasing reduction
+7. **4x oversampling** (oscillator, pre-filter highpass, filter)
 
 ---
 
@@ -747,7 +747,7 @@ Combine with clock division for even more complex rhythmic interplay:
 | Audio Voltage | ±5V |
 | Pitch Standard | 1V/oct |
 | Gate/Trigger | 10V |
-| Oversampling | 2x in filter stage |
+| Oversampling | 4x (oscillator, pre-filter highpass, filter) |
 | Voices | 2 monophonic (TwinSlide), 1 monophonic (MonoSlide) |
 
 ---

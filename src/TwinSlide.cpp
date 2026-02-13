@@ -1776,6 +1776,7 @@ struct TwinSlide : Module {
 		// Expander communication
 		// Fine CV from expander (reset each sample, applied later)
 		float fineCv[2] = {0.0f, 0.0f};
+		float transposeCv = 0.0f;
 
 		if (rightExpander.module && rightExpander.module->model == modelTwinSlideExpander) {
 			// Store internal values before any override (for expander output)
@@ -1804,6 +1805,7 @@ struct TwinSlide : Module {
 						fineCv[t] = fromExpander[dataOffset + 3] / 5.0f;
 				}
 			}
+			transposeCv = fromExpander[17];
 
 			// SEND TO EXPANDER: Always send internal sequencer values (not overridden)
 			float *toExpander = static_cast<float*>(rightExpander.module->leftExpander.producerMessage);
@@ -1812,6 +1814,13 @@ struct TwinSlide : Module {
 				toExpander[offset] = internalCv[t];
 				toExpander[offset + 1] = internalGate[t];
 				toExpander[offset + 2] = internalSlide[t];
+			}
+			// Accent outputs [6] and [7]
+			int expSeq = isSeqMode() ? seqIndexEdit : phrase[phraseIndexRun];
+			for (int t = 0; t < 2; t++) {
+				int expStep = running ? stepIndexRun[t] : getEditStep();
+				bool internalAccent = attributes[expSeq][t][expStep].getAccent();
+				toExpander[6 + t] = internalAccent ? 10.0f : 0.0f;
 			}
 
 			// REQUEST FLIP on expander's left side
@@ -1828,7 +1837,7 @@ struct TwinSlide : Module {
 			bool gate[2], accent[2], slide[2];
 			for (int t = 0; t < 2; t++) {
 				step[t] = running ? stepIndexRun[t] : getEditStep();
-				pitch[t] = outputs[CV_OUTPUTS[t]].getVoltage();
+				pitch[t] = outputs[CV_OUTPUTS[t]].getVoltage() + transposeCv;
 				gate[t] = outputs[GATE_OUTPUTS[t]].getVoltage() >= 1.0f;
 				accent[t] = attributes[seq][t][step[t]].getAccent();
 				slide[t] = attributes[seq][t][step[t]].getSlide();
