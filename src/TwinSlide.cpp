@@ -145,6 +145,9 @@ struct TwinSlide : Module {
 	static inline constexpr int ENVMOD_INPUTS[2] = {ENVMODA_INPUT, ENVMODB_INPUT};
 	static inline constexpr int DECAY_INPUTS[2] = {DECAYA_INPUT, DECAYB_INPUT};
 
+	// Need to save, no reset
+	int defaultPulsesPerStep;// user-configurable default PPS, survives Initialize
+
 	// Need to save, with reset
 	bool holdTiedNotes;
 	int pulsesPerStep;// 1 means normal gate mode, alt choices are 4, 6, 12, 24 PPS (Pulses per step)
@@ -353,7 +356,7 @@ struct TwinSlide : Module {
 		configParam(COPY_PARAM, 0.0f, 1.0f, 0.0f, "Copy");
 		configParam(PASTE_PARAM, 0.0f, 1.0f, 0.0f, "Paste");
 		configParam(CLR_PARAM, 0.0f, 1.0f, 0.0f, "Clear track");
-		configSwitch(CPMODE_PARAM, 0.0f, 2.0f, 0.0f, "COPY", {"4", "8", "All"});// 0.0f is top position
+		configSwitch(CPMODE_PARAM, 0.0f, 2.0f, 0.0f, "Copy", {"4 steps", "8 steps", "Track"});// 0.0f is top position
 
 		configParam(GATE_PARAM, 0.0f, 1.0f, 0.0f, "Gate");
 		configParam(TIE_PARAM, 0.0f, 1.0f, 0.0f, "Tied");
@@ -414,6 +417,7 @@ struct TwinSlide : Module {
 		for (int t = 0; t < 2; t++)
 			voice[t].setSampleRate(APP->engine->getSampleRate());
 
+		defaultPulsesPerStep = 24;
 		onReset();
 	}
 
@@ -439,7 +443,7 @@ struct TwinSlide : Module {
 	void onReset() override final {
 		clearRndExclusions();
 		holdTiedNotes = true;
-		pulsesPerStep = 24;
+		pulsesPerStep = defaultPulsesPerStep;
 		running = false;
 		runModeSong = MODE_FWD;
 		stepIndexEdit = 0;
@@ -680,6 +684,7 @@ struct TwinSlide : Module {
 
 		json_object_set_new(rootJ, "holdTiedNotes", json_boolean(holdTiedNotes));
 		json_object_set_new(rootJ, "pulsesPerStep", json_integer(pulsesPerStep));
+		json_object_set_new(rootJ, "defaultPulsesPerStep", json_integer(defaultPulsesPerStep));
 		json_object_set_new(rootJ, "running", json_boolean(running));
 		json_object_set_new(rootJ, "runModeSong3", json_integer(runModeSong));
 		json_object_set_new(rootJ, "sequence", json_integer(seqIndexEdit));
@@ -767,6 +772,10 @@ struct TwinSlide : Module {
 		json_t *pulsesPerStepJ = json_object_get(rootJ, "pulsesPerStep");
 		if (pulsesPerStepJ)
 			pulsesPerStep = json_integer_value(pulsesPerStepJ);
+
+		json_t *defaultPulsesPerStepJ = json_object_get(rootJ, "defaultPulsesPerStep");
+		if (defaultPulsesPerStepJ)
+			defaultPulsesPerStep = json_integer_value(defaultPulsesPerStepJ);
 
 		json_t *runningJ = json_object_get(rootJ, "running");
 		if (runningJ)
@@ -1155,59 +1164,15 @@ struct TwinSlide : Module {
 					}
 					// else nothing to do for ALL
 
-					if (seqMode) {
-						if (seqCopied) {// non-crossed paste (seq vs song)
-							for (int i = 0, s = stepInTrack; i < countCP; i++, s++) {
-								cv[seqIndexEdit][track][s] = cvCPbuffer[i];
-								attributes[seqIndexEdit][track][s] = attribCPbuffer[i];
-							}
-						}
-						else {// crossed paste to seq (seq vs song)
-							if (params[CPMODE_PARAM].getValue() > 1.5f) { // ALL (init steps in current track)
-								for (int s = 0; s < 16; s++) {
-									attributes[seqIndexEdit][track][s].toggleGate();
-								}
-								trackTranspose[seqIndexEdit][track] = 0;
-								trackRotate[seqIndexEdit][track] = 0;
-							}
-							else if (params[CPMODE_PARAM].getValue() < 0.5f) {// 4 (randomize CVs in current track)
-								for (int s = 0; s < 16; s++)
-									cv[seqIndexEdit][track][s] = ((float)(random::u32() % 7)) + ((float)(random::u32() % 12)) / 12.0f - 3.0f;
-								trackTranspose[seqIndexEdit][track] = 0;
-								trackRotate[seqIndexEdit][track] = 0;
-							}
-							else {// 8 (randomize gate in current track)
-								for (int s = 0; s < 16; s++)
-									if ( (random::u32() & 0x1) != 0)
-										attributes[seqIndexEdit][track][s].toggleGate();
-							}
-							startCP = 0;
-							countCP = 16;
-							infoCopyPaste *= 2l;
+					if (seqMode && seqCopied) {
+						for (int i = 0, s = stepInTrack; i < countCP; i++, s++) {
+							cv[seqIndexEdit][track][s] = cvCPbuffer[i];
+							attributes[seqIndexEdit][track][s] = attribCPbuffer[i];
 						}
 					}
-					else {
-						if (!seqCopied) {// non-crossed paste (seq vs song)
-							for (int i = 0, p = startCP; i < countCP; i++, p++)
-								phrase[p] = phraseCPbuffer[i];
-						}
-						else {// crossed paste to song (seq vs song)
-							if (params[CPMODE_PARAM].getValue() > 1.5f) { // ALL (init phrases)
-								for (int p = 0; p < 32; p++)
-									phrase[p] = 0;
-							}
-							else if (params[CPMODE_PARAM].getValue() < 0.5f) {// 4 (phrases increase from 1 to 32)
-								for (int p = 0; p < 32; p++)
-									phrase[p] = p;						
-							}
-							else {// 8 (randomize phrases)
-								for (int p = 0; p < 32; p++)
-									phrase[p] = random::u32() % 32;
-							}
-							startCP = 0;
-							countCP = 32;
-							infoCopyPaste *= 2l;
-						}					
+					else if (!seqMode && !seqCopied) {
+						for (int i = 0, p = startCP; i < countCP; i++, p++)
+							phrase[p] = phraseCPbuffer[i];
 					}
 					displayState = DISP_NORMAL;
 				}
@@ -2489,27 +2454,8 @@ struct TwinSlideWidget : ModuleWidget {
 					if (module->infoCopyPaste != 0l) {
 						if (module->infoCopyPaste > 0l)
 							snprintf(displayStr, 4, "CPY");
-						else {
-							float cpMode = module->params[TwinSlide::CPMODE_PARAM].getValue();
-							if (seqMode && !module->seqCopied) {// cross paste to seq
-								if (cpMode > 1.5f)// All = toggle gate
-									snprintf(displayStr, 4, "TG1");
-								else if (cpMode < 0.5f)// 4 = random CV
-									snprintf(displayStr, 4, "RCV");
-								else// 8 = random gate
-									snprintf(displayStr, 4, "RG1");
-							}
-							else if (!seqMode && module->seqCopied) {// cross paste to song
-								if (cpMode > 1.5f)// All = init
-									snprintf(displayStr, 4, "CLR");
-								else if (cpMode < 0.5f)// 4 = increase by 1
-									snprintf(displayStr, 4, "INC");
-								else// 8 = random phrases
-									snprintf(displayStr, 4, "RPH");
-							}
-							else
-								snprintf(displayStr, 4, "PST");
-						}
+						else
+							snprintf(displayStr, 4, "PST");
 					}
 					else if (module->editingPpqn != 0ul) {
 						snprintf(displayStr, 16, "x%2u", (unsigned) module->pulsesPerStep);
@@ -2923,6 +2869,17 @@ struct TwinSlideWidget : ModuleWidget {
 		menu->addChild(new MenuSeparator());
 		menu->addChild(createMenuLabel("Sequencer settings"));
 
+		menu->addChild(createSubmenuItem("Default clock resolution", "", [=](Menu* menu) {
+			const int ppsValues[] = {1, 4, 6, 12, 24};
+			const char* ppsLabels[] = {"x1", "x4", "x6", "x12", "x24"};
+			for (int i = 0; i < 5; i++) {
+				menu->addChild(createCheckMenuItem(ppsLabels[i], "",
+					[=]() { return module->defaultPulsesPerStep == ppsValues[i]; },
+					[=]() { module->defaultPulsesPerStep = ppsValues[i]; }
+				));
+			}
+		}));
+
 		menu->addChild(createBoolPtrMenuItem("Reset on run", "", &module->resetOnRun));
 
 		menu->addChild(createSubmenuItem("Retrigger gates on reset", "", [=](Menu* menu) {
@@ -3013,7 +2970,7 @@ struct TwinSlideWidget : ModuleWidget {
 			if (paramQuantity) {
 				TwinSlide* module = static_cast<TwinSlide*>(paramQuantity->module);
 				if (module->editingPpqn != 0) {
-					module->pulsesPerStep = 24;
+					module->pulsesPerStep = module->defaultPulsesPerStep;
 					//editingPpqn = editGateLengthTimeTicks;
 				}
 				else if (module->displayState == TwinSlide::DISP_MODE) {
@@ -3427,7 +3384,7 @@ struct TwinSlideWidget : ModuleWidget {
 		cpMode8Label->box.size = VecPx(10, 10);
 		addChild(cpMode8Label);
 
-		ControlLabel* cpModeALabel = new ControlLabel("A");
+		ControlLabel* cpModeALabel = new ControlLabel("T");
 		cpModeALabel->box.pos = VecPx(402, 160);
 		cpModeALabel->box.size = VecPx(10, 10);
 		addChild(cpModeALabel);
