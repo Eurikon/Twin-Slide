@@ -3,7 +3,7 @@
 **Twisted Cable - Twin Slide**
 Dual Acid Bass Synthesizer for VCV Rack
 
-Version 2.1.0 | February 2026
+Version 2.1.5 | February 2026
 
 ---
 
@@ -171,21 +171,42 @@ This enables polyrhythmic patterns between tracks.
 
 ### Copy/Paste System
 
-Three-position switch selects copy mode:
+Three buttons and a three-position switch control copy/paste:
 
-| Position | Sequence Mode | Song Cross-Paste |
-|----------|--------------|------------------|
-| **4** | Copy/paste 4 steps | RCV - Randomize CVs |
-| **8** | Copy/paste 8 steps | RG1 - Randomize gates |
-| **All** | Copy/paste full track | TG1 - Toggle gates |
+- **CPY** button - Copy steps or phrases to the internal clipboard
+- **PST** button - Paste from clipboard
+- **CLR** button - Clear the current track (sequence mode)
+- **Mode switch** (4 / 8 / T) - Selects how many steps to copy
 
-**Song Mode Cross-Paste:**
+The copy start position is determined by the current edit cursor. In 4 and 8 modes, copying begins at the cursor and captures up to 4 or 8 steps (clamped to track end). In T (Track) mode, the entire 16-step track is copied regardless of cursor position.
 
-| Position | Effect |
-|----------|--------|
-| **4** | INC - Increment phrase numbers |
-| **8** | RPH - Randomize phrases |
-| **All** | CLR - Clear (initialize) |
+| Switch | Copy | Paste |
+|--------|------|-------|
+| **4** | 4 steps from cursor | 4 steps at cursor |
+| **8** | 8 steps from cursor | 8 steps at cursor |
+| **T** | Full track (16 steps) | Full track |
+
+**How to copy/paste steps:**
+
+1. Click a step button on the track row you want to copy from (top row = Track A, bottom row = Track B)
+2. Set the mode switch to the desired range: 4, 8, or T (full track)
+3. Press **CPY** - the display shows "CPY" and the copied range lights up
+4. Click a step button at the destination position (can be a different track row, step position, or sequence)
+5. Press **PST** - the display shows "PST" and the pasted range lights up
+
+Copy and paste operate on whichever track row the edit cursor is on. Clicking a step on the other row moves the cursor there, so pasting between tracks is done by clicking the destination row before pressing PST.
+
+**How to copy/paste phrases (Song mode):**
+
+1. Switch to Song mode
+2. Navigate to the phrase slot you want to copy from
+3. Press **CPY**
+4. Navigate to the destination phrase slot
+5. Press **PST**
+
+In Song mode, copy/paste operates on phrase slots instead of steps. Paste only works when you are in the same mode (Seq or Song) you copied from. The display shows "CPY" on copy and "PST" on paste. During copy/paste, the affected steps are highlighted in the step LEDs.
+
+Copy/paste is disabled while Attach mode is active.
 
 ### Step Attributes
 
@@ -194,11 +215,12 @@ Each step has the following attributes toggled by dedicated buttons:
 | Button | Attribute | Function |
 |--------|-----------|----------|
 | **GATE** | Gate On/Off | Step produces a gate signal |
-| **SLIDE** | Slide/Portamento | Glide pitch from previous step |
-| **ACCENT** | Accent | Boost filter envelope and VCA |
 | **TIE** | Tied Note | Extend gate into next step (no retrigger) |
-| **PROB** | Probability | Gate fires probabilistically (use knob) |
+| **REL** | Per-Step Release | Custom release time for this step (use knob) |
+| **ACCENT** | Accent | Boost filter envelope and VCA |
 | **COND** | Condition | Conditional step execution |
+| **PROB** | Probability | Gate fires probabilistically (use knob) |
+| **SLIDE** | Slide/Portamento | Glide pitch from previous step |
 
 ### Step Conditions
 
@@ -211,6 +233,12 @@ The COND button cycles through 5 conditions:
 | 2 | 1:4 | Play every 4th pass |
 | 3 | 1st | Play on first pass only |
 | 4 | !1st | Play on all passes except first |
+
+### Per-Step Release
+
+The REL button toggles a custom release time for the current step. When enabled, the REL knob (21-250 ms) sets that step's release time independently from the Expert Mode global release setting. When disabled, the step uses the global Expert Mode release value.
+
+This allows individual steps to ring out longer or shorter, adding expressiveness to patterns.
 
 ### Gate Types
 
@@ -272,7 +300,7 @@ Each voice contains a complete synthesis chain:
 
 Access via context menu → **Expert Mode A** or **Expert Mode B**
 
-Each synth has 5 expert parameters:
+Each synth has 6 expert parameters:
 
 ### VCF Range
 
@@ -327,9 +355,18 @@ Crossfades between saw and square waveforms:
 
 This allows smooth waveform transitions beyond the discrete switch positions.
 
+### Bass Comp
+
+Controls bass compensation via the filter's feedback highpass cutoff. At resonance, the filter's feedback loop naturally cancels low frequencies. Bass Comp preserves low-end content by adjusting the feedback highpass:
+
+| Value | Effect |
+|-------|--------|
+| 0% | Full bass preserved (feedback highpass disabled) |
+| 100% | Original 303 behavior (default) |
+
 ### Indicator
 
-When VCF Range, Decay Speed, Sustain, and Release are all at default (0, 0, 0%, 0%), the submenu shows "303" indicating original behavior. Blend is not included in this check.
+When VCF Range, Decay Speed, Sustain, Release, and Bass Comp are all at default (0, 0, 0%, 0%, 100%), the submenu shows "303" indicating original behavior. Blend is not included in this check.
 
 ---
 
@@ -402,6 +439,14 @@ Click "Generate" to create a new pattern for the currently selected track. Each 
 | **Pin Seed** | Off | Prevents seed auto-increment after generation |
 | **Start with Note** | On | Guarantees first step has a note |
 | **Start with Accent** | Off | First note gets an accent |
+
+### Randomizer Exclusion
+
+Attribute labels on the panel (NOTE, GATE, TIE, REL, ACC, CON, PROB, SLIDE, and the keyboard GATE label) are clickable toggles. Clicking a label dims it, excluding that attribute from pattern generation. This lets you regenerate patterns while preserving specific attributes you have already set.
+
+For example, dimming "NOTE" preserves your pitch sequence while randomizing gates, accents, and slides.
+
+Exclusions are cleared on module Initialize.
 
 ### Seed Behavior
 
@@ -656,13 +701,14 @@ See [Acid Pattern Generator](#acid-pattern-generator) section.
 
 | Option | Description |
 |--------|-------------|
-| Expert Mode A | VCF Range, Decay Speed, Sustain, Release, Blend for Synth A |
-| Expert Mode B | VCF Range, Decay Speed, Sustain, Release, Blend for Synth B |
+| Expert Mode A | VCF Range, Decay Speed, Sustain, Release, Blend, Bass Comp for Synth A |
+| Expert Mode B | VCF Range, Decay Speed, Sustain, Release, Blend, Bass Comp for Synth B |
 
 ### Sequencer Settings
 
 | Option | Values | Description |
 |--------|--------|-------------|
+| Default clock resolution | x1/x4/x6/x12/x24 | Default PPS used on Initialize and new instances |
 | Reset on run | On/Off | Reset sequence when Run is triggered |
 | Retrigger gates on reset | No/Yes/Only when Run unconnected | Gate behavior on reset |
 | Hold tied notes | On/Off | Sustain notes through tied steps |
