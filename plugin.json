@@ -8,16 +8,17 @@
     "authorEmail": "",
     "authorUrl": "",
     "pluginUrl": "",
-    "manualUrl": "",
-    "sourceUrl": "",
-    "donateUrl": "",
+    "manualUrl": "https://github.com/Eurikon/Twin-Slide/blob/master/docs/TwinSlide_manual.md",
+    "sourceUrl": "https://github.com/Eurikon/Twin-Slide",
+    "donateUrl": "https://buymeacoffee.com/twistedcable",
     "changelogUrl": "",
     "modules": [
         {
             "slug": "TwinSlide",
             "name": "TwinSlide",
             "description": "Dual acid bass synthesizer",
-            "tags": ["Synth voice", "Sequencer"]
+            "keywords": "303 bass",
+            "tags": ["Synth voice", "Sequencer", "Dual"]
         },
         {
             "slug": "TwinSlideExpander",
@@ -29,6 +30,7 @@
             "slug": "MonoSlide",
             "name": "MonoSlide",
             "description": "Mono acid bass synthesizer",
+            "keywords": "303 bass",
             "tags": ["Synth voice"]
         }
     ]
