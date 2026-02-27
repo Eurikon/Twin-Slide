@@ -1476,13 +1476,14 @@ struct SynthVoice {
 		float filterOut = 0.f;
 		for (int i = 0; i < OVERSAMPLE; i++) {
 			float oscOut = wavetableOsc.getSample();
-			float input = oscOut * envLevel * gain;
+			float input = oscOut * gain;
 			input += 1e-6f * (2.f * random::uniform() - 1.f);
 			float hpfInput = (float)preFilterHPF.process(input);
 			filter.process(hpfInput, oversampleTime);
 			filterOut = (float)antiAliasFilter.process(filter.lowpass);
 		}
 		filterOut = (float)postFilterHPF.process(filterOut);
+		filterOut *= envLevel;
 
 		return 2.5f * filterOut;
 	}
