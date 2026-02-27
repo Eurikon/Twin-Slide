@@ -4,10 +4,8 @@ permissions:
 
 on:
   push:
-    paths-ignore:
-      - 'README*'
-      - 'docs/**'
-  pull_request:
+    tags:
+      - 'v*'
 
 env:
   rack-sdk-version: 2.6.4

@@ -1328,6 +1328,7 @@ struct SynthVoice {
 	float accentEnv = 0.0f;
 	bool decaying = false;
 	bool prevGate = false;
+	bool currentNoteAccented = false;
 
 	double sampleRate = 44100.0;
 
@@ -1366,6 +1367,7 @@ struct SynthVoice {
 		accentEnv = 0.0f;
 		decaying = false;
 		prevGate = false;
+		currentNoteAccented = false;
 	}
 
 	float process(float pitch, bool gate, bool accent, bool slide,
@@ -1408,7 +1410,9 @@ struct SynthVoice {
 		float decayRate = 1.0f / (decayTimeSec * sampleRate);
 
 		if (newNote) {
-			decaying = false;
+			env = 1.0f;
+			decaying = true;
+			currentNoteAccented = accent;
 			if (accent) {
 				accentDecayEnv.trigger();
 			}
@@ -1431,7 +1435,7 @@ struct SynthVoice {
 				}
 			}
 		} else {
-			float releaseMs = 21.0f + releaseAmt * 479.0f;
+			float releaseMs = currentNoteAccented ? 50.0f : (21.0f + releaseAmt * 479.0f);
 			float releaseRate = 1.0f / (releaseMs / 1000.0f * sampleRate);
 			env *= (1.0f - releaseRate);
 			if (env < 0.001f) env = 0.0f;

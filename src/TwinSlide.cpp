@@ -127,23 +127,23 @@ struct TwinSlide : Module {
 	float rightMessages[2][18] = {};
 
 	// Output ID mappings for track indexing
-	static constexpr int CV_OUTPUTS[2] = {CVA_OUTPUT, CVB_OUTPUT};
-	static constexpr int GATE_OUTPUTS[2] = {GATEA_OUTPUT, GATEB_OUTPUT};
-	static constexpr int AUDIO_OUTPUTS[2] = {AUDIOA_OUTPUT, AUDIOB_OUTPUT};
+	inline static constexpr int CV_OUTPUTS[2] = {CVA_OUTPUT, CVB_OUTPUT};
+	inline static constexpr int GATE_OUTPUTS[2] = {GATEA_OUTPUT, GATEB_OUTPUT};
+	inline static constexpr int AUDIO_OUTPUTS[2] = {AUDIOA_OUTPUT, AUDIOB_OUTPUT};
 
 	// Synth param/input ID mappings for track indexing
-	static constexpr int CUTOFF_PARAMS[2] = {CUTOFFA_PARAM, CUTOFFB_PARAM};
-	static constexpr int RES_PARAMS[2] = {RESA_PARAM, RESB_PARAM};
-	static constexpr int ENVMOD_PARAMS[2] = {ENVMODA_PARAM, ENVMODB_PARAM};
-	static constexpr int DECAY_PARAMS[2] = {DECAYA_PARAM, DECAYB_PARAM};
-	static constexpr int ACCENT_KNOB_PARAMS[2] = {ACCENTA_KNOB_PARAM, ACCENTB_KNOB_PARAM};
-	static constexpr int DRIVE_PARAMS[2] = {DRIVEA_PARAM, DRIVEB_PARAM};
-	static constexpr int FINE_PARAMS[2] = {FINEA_PARAM, FINEB_PARAM};
-	static constexpr int WAVE_PARAMS[2] = {WAVEA_PARAM, WAVEB_PARAM};
-	static constexpr int LEVEL_PARAMS[2] = {LEVELA_PARAM, LEVELB_PARAM};
-	static constexpr int CUTOFF_INPUTS[2] = {CUTOFFA_INPUT, CUTOFFB_INPUT};
-	static constexpr int ENVMOD_INPUTS[2] = {ENVMODA_INPUT, ENVMODB_INPUT};
-	static constexpr int DECAY_INPUTS[2] = {DECAYA_INPUT, DECAYB_INPUT};
+	inline static constexpr int CUTOFF_PARAMS[2] = {CUTOFFA_PARAM, CUTOFFB_PARAM};
+	inline static constexpr int RES_PARAMS[2] = {RESA_PARAM, RESB_PARAM};
+	inline static constexpr int ENVMOD_PARAMS[2] = {ENVMODA_PARAM, ENVMODB_PARAM};
+	inline static constexpr int DECAY_PARAMS[2] = {DECAYA_PARAM, DECAYB_PARAM};
+	inline static constexpr int ACCENT_KNOB_PARAMS[2] = {ACCENTA_KNOB_PARAM, ACCENTB_KNOB_PARAM};
+	inline static constexpr int DRIVE_PARAMS[2] = {DRIVEA_PARAM, DRIVEB_PARAM};
+	inline static constexpr int FINE_PARAMS[2] = {FINEA_PARAM, FINEB_PARAM};
+	inline static constexpr int WAVE_PARAMS[2] = {WAVEA_PARAM, WAVEB_PARAM};
+	inline static constexpr int LEVEL_PARAMS[2] = {LEVELA_PARAM, LEVELB_PARAM};
+	inline static constexpr int CUTOFF_INPUTS[2] = {CUTOFFA_INPUT, CUTOFFB_INPUT};
+	inline static constexpr int ENVMOD_INPUTS[2] = {ENVMODA_INPUT, ENVMODB_INPUT};
+	inline static constexpr int DECAY_INPUTS[2] = {DECAYA_INPUT, DECAYB_INPUT};
 
 	// Need to save, no reset
 	int defaultPulsesPerStep;// user-configurable default PPS, survives Initialize
