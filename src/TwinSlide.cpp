@@ -233,6 +233,7 @@ struct TwinSlide : Module {
 	long gateTimeTicks;
 	long revertDisplayTimeTicks;
 	long lengthDisplayTimeTicks;
+	long modeRevertTimeTicks;
 	long warningTimeTicks;
 	long holdDetectTimeTicks;
 	long editGateLengthTimeTicks;
@@ -432,6 +433,7 @@ struct TwinSlide : Module {
 		gateTimeTicks = (long)(0.4 * tickFactor);
 		revertDisplayTimeTicks = (long)(0.7 * tickFactor);
 		lengthDisplayTimeTicks = (long)(5.0 * tickFactor);
+		modeRevertTimeTicks = (long)(1.0 * tickFactor);
 		warningTimeTicks = (long)(0.7 * tickFactor);
 		holdDetectTimeTicks = (long)(2.0 * tickFactor);
 		editGateLengthTimeTicks = (long)(3.5 * tickFactor);
@@ -1328,13 +1330,14 @@ struct TwinSlide : Module {
 							songModeIdx = clamp(songModeIdx + deltaKnob, 0, NUM_SONG_MODES - 1);
 							runModeSong = songModes[songModeIdx];
 						}
-						revertDisplay = lengthDisplayTimeTicks;
+						revertDisplay = modeRevertTimeTicks;
 					}
 					else if (displayState == DISP_CLOCKDIV) {
 						if (seqMode) {
 							int track = getEditTrack();
 							trackClockDiv[seqIndexEdit][track] = clamp(trackClockDiv[seqIndexEdit][track] + deltaKnob, 1, 5);
 						}
+						revertDisplay = modeRevertTimeTicks;
 					}
 					else if (displayState == DISP_LENGTH) {
 						if (seqMode) {
@@ -1903,8 +1906,8 @@ struct TwinSlide : Module {
 				else if (displayState == DISP_MODE) {
 					if (seqMode) {
 						if (track == getEditTrack()) {
-							// Pulse selected track row at ~2Hz
-							if ((flashCounter / 64) % 2 == 0)
+							int flashDiv = (revertDisplay > 0 && revertDisplay <= modeRevertTimeTicks) ? 32 : 64;
+							if ((flashCounter / flashDiv) % 2 == 0)
 								amber = 0.71f;
 						}
 					}
@@ -1917,7 +1920,8 @@ struct TwinSlide : Module {
 				}
 				else if (displayState == DISP_CLOCKDIV) {
 					if (track == getEditTrack()) {
-						if ((flashCounter / 64) % 2 == 0)
+						int flashDiv = (revertDisplay > 0 && revertDisplay <= modeRevertTimeTicks) ? 32 : 64;
+						if ((flashCounter / flashDiv) % 2 == 0)
 							amber = 0.71f;
 					}
 				}

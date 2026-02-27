@@ -1260,6 +1260,56 @@ struct DecayEnvelope303 {
 
 
 // ============================================================================
+// BiquadDeClicker — 2nd-order lowpass from Open303 rosic_BiquadFilter
+// Used as amplitude envelope de-clicker (LOWPASS12 mode, 200Hz, Butterworth Q)
+// ============================================================================
+
+struct BiquadDeClicker {
+	double b0 = 1.0, b1 = 0.0, b2 = 0.0, a1 = 0.0, a2 = 0.0;
+	double x1 = 0.0, x2 = 0.0, y1 = 0.0, y2 = 0.0;
+	double frequency = 200.0;
+	double q = 0.70710678118654752;
+	double sampleRate = 44100.0;
+
+	void setSampleRate(double sr) {
+		sampleRate = sr;
+		calcCoeffs();
+	}
+
+	void setFrequency(double freq) {
+		frequency = freq;
+		calcCoeffs();
+	}
+
+	void calcCoeffs() {
+		double w = 2.0 * M_PI * frequency / sampleRate;
+		double s = std::sin(w);
+		double c = std::cos(w);
+		double alpha = s / (2.0 * q);
+		double scale = 1.0 / (1.0 + alpha);
+		a1 = 2.0 * c * scale;
+		a2 = (alpha - 1.0) * scale;
+		b1 = (1.0 - c) * scale;
+		b0 = 0.5 * b1;
+		b2 = b0;
+	}
+
+	double process(double in) {
+		double y = b0 * in + b1 * x1 + b2 * x2 + a1 * y1 + a2 * y2 + FLT_MIN;
+		x2 = x1;
+		x1 = in;
+		y2 = y1;
+		y1 = y;
+		return y;
+	}
+
+	void reset() {
+		x1 = 0.0; x2 = 0.0; y1 = 0.0; y2 = 0.0;
+	}
+};
+
+
+// ============================================================================
 // SynthVoice
 // ============================================================================
 
@@ -1272,6 +1322,7 @@ struct SynthVoice {
 	EnvModScaler303 envModScaler;
 	DecayEnvelope303 accentDecayEnv;
 	EllipticQuarterBandFilter antiAliasFilter;
+	BiquadDeClicker ampDeClicker;
 
 	float env = 0.0f;
 	float accentEnv = 0.0f;
@@ -1297,6 +1348,7 @@ struct SynthVoice {
 		preFilterHPF.setSampleRate(sr * OVERSAMPLE);
 		postFilterHPF.setSampleRate(sr);
 		accentDecayEnv.setSampleRate(sr);
+		ampDeClicker.setSampleRate(sr);
 
 		// Initialize fixed cutoffs
 		preFilterHPF.setCutoff(44.486);
@@ -1308,6 +1360,7 @@ struct SynthVoice {
 	void reset() {
 		filter.reset();
 		antiAliasFilter.reset();
+		ampDeClicker.reset();
 		pitchSlew.setTimeConstant(0.1f);
 		env = 0.0f;
 		accentEnv = 0.0f;
@@ -1392,6 +1445,7 @@ struct SynthVoice {
 			envLevel *= (1.0f + accentAmt * 0.5f);
 			envLevel = clamp(envLevel, 0.0f, 1.5f);
 		}
+		envLevel = (float)ampDeClicker.process((double)envLevel);
 
 		float gain = 1.0f + drive * 1.0f;
 
