@@ -3,7 +3,7 @@
 **Twisted Cable - Twin Slide**
 Dual Acid Bass Synthesizer for VCV Rack
 
-Version 2.1.5 | February 2026
+Version 2.1.5 | 03-03-2026
 
 ---
 
