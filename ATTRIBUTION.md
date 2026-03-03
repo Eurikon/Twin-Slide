@@ -25,8 +25,8 @@ Adapted components:
 
 **Open303**
 - **Author**: Robin Schmidt (RS-MET / ROSIC)
-- **License**: GPL-3.0
-- **Repository**: https://github.com/maddanio/open303
+- **License**: MIT
+- **Repository**: https://github.com/RobinSchmidt/Open303
 - **Used For**: Complete 303-style synth voice DSP
 
 Ported components in `SynthDSP.hpp`:
