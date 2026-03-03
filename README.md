@@ -9,7 +9,7 @@ Dual acid bass synthesizer for VCV Rack with integrated step sequencer, expander
 
 **Twisted Cable - Twin Slide**
 is a dual acid bass synthesizer module for VCV Rack, featuring twin sequencers driving twin synth voices. </br></br>
-![TwinSlide](/docs/img/TwinSlide.heic)
+![TwinSlide](/docs/img/Twin_Slide.heic)
 </br></br>
 The design builds upon the proven Phrase Seq 32 from ImpromptuModular.</br>
 Modified to two parallel tracks inside each sequence, enabling simultaneous dual-voice (and/or duophonic) playback.</br>
