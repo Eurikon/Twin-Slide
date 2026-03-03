@@ -32,7 +32,7 @@ Adapted components:
 Ported components in `SynthDSP.hpp`:
 - `OnePoleFilter303` - Feedback highpass filter
 - `TeeBeeFilter303` - Diode ladder filter (circuit-accurate)
-- `SlideOscillator` - PolyBLEP saw/square oscillator
+- `Oscillator` - MipMapped wavetable saw/square with tanh soft saturation
 - `AnalogEnvelope303` - RC-style VCA envelope
 - `LeakyIntegrator303` - Pitch slew for slide/portamento
 - `SimpleHighpass303` - Pre/post filter highpass
