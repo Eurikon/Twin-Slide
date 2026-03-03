@@ -7,6 +7,7 @@ or (at your option) any later version.
 
 This project incorporates GPL-3.0-licensed code from:
 - **ImpromptuModular** by Marc Boulé (sequencer architecture)
+And MIT licensed code from:
 - **Open303** by Robin Schmidt / RS-MET / ROSIC (synth DSP)
 
 The **graphics** in the `res` directory are copyright © 2025 Latif Karoumi and licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/), 
