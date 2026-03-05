@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make:*)",
+      "Bash(git mv:*)",
+      "Bash(grep:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(git add:*)",
+      "WebFetch(domain:tuning.ableton.com)",
+      "WebFetch(domain:xenharmlib.readthedocs.io)",
+      "Bash(cat:*)",
+      "Bash(xxd:*)",
+      "Bash(gh run view:*)",
+      "Bash(cppcheck:*)",
+      "Bash(sudo ln:*)",
+      "WebFetch(domain:www.timstinchcombe.co.uk)",
+      "WebFetch(domain:pisongs.com)",
+      "Bash(wget:*)",
+      "Bash(for project in acid techno shepardspi earth jukebox)",
+      "Bash(do)",
+      "Bash(echo:*)",
+      "Bash(done)",
+      "Bash(fi)",
+      "WebFetch(domain:docs.nodescript.dev)",
+      "WebSearch",
+      "WebFetch(domain:ia801806.us.archive.org)",
+      "WebFetch(domain:www.matrixsynth.com)",
+      "WebFetch(domain:www.firstpr.com.au)",
+      "WebFetch(domain:www.soundsemiconductor.com)",
+      "Bash(pip3 install:*)",
+      "WebFetch(domain:roland50.studio)",
+      "Bash(curl:*)",
+      "Bash(head:*)",
+      "Bash(gh api:*)"
+    ]
+  }
+}

@@ -13,6 +13,22 @@
 
 Plugin *pluginInstance;
 
+// Plugin-level persistent settings
+namespace TwinSlideSettings {
+	int defaultPulsesPerStep = 1;
+}
+
+extern "C" json_t* settingsToJson() {
+	json_t* rootJ = json_object();
+	json_object_set_new(rootJ, "defaultPulsesPerStep", json_integer(TwinSlideSettings::defaultPulsesPerStep));
+	return rootJ;
+}
+
+extern "C" void settingsFromJson(json_t* rootJ) {
+	json_t* j = json_object_get(rootJ, "defaultPulsesPerStep");
+	if (j)
+		TwinSlideSettings::defaultPulsesPerStep = json_integer_value(j);
+}
 
 void init(Plugin *p) {
 	pluginInstance = p;

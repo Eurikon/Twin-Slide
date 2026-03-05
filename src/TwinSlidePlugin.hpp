@@ -20,6 +20,11 @@ using namespace rack;
 
 extern Plugin *pluginInstance;
 
+// Plugin-level persistent settings (saved in Rack's settings.json)
+namespace TwinSlideSettings {
+	extern int defaultPulsesPerStep;
+}
+
 
 // TwinSlide modules
 extern Model *modelTwinSlide;

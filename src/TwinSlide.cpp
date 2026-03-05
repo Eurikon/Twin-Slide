@@ -418,7 +418,7 @@ struct TwinSlide : Module {
 		for (int t = 0; t < 2; t++)
 			voice[t].setSampleRate(APP->engine->getSampleRate());
 
-		defaultPulsesPerStep = 24;
+		defaultPulsesPerStep = TwinSlideSettings::defaultPulsesPerStep;
 		onReset();
 	}
 
@@ -686,7 +686,6 @@ struct TwinSlide : Module {
 
 		json_object_set_new(rootJ, "holdTiedNotes", json_boolean(holdTiedNotes));
 		json_object_set_new(rootJ, "pulsesPerStep", json_integer(pulsesPerStep));
-		json_object_set_new(rootJ, "defaultPulsesPerStep", json_integer(defaultPulsesPerStep));
 		json_object_set_new(rootJ, "running", json_boolean(running));
 		json_object_set_new(rootJ, "runModeSong3", json_integer(runModeSong));
 		json_object_set_new(rootJ, "sequence", json_integer(seqIndexEdit));
@@ -774,10 +773,6 @@ struct TwinSlide : Module {
 		json_t *pulsesPerStepJ = json_object_get(rootJ, "pulsesPerStep");
 		if (pulsesPerStepJ)
 			pulsesPerStep = json_integer_value(pulsesPerStepJ);
-
-		json_t *defaultPulsesPerStepJ = json_object_get(rootJ, "defaultPulsesPerStep");
-		if (defaultPulsesPerStepJ)
-			defaultPulsesPerStep = json_integer_value(defaultPulsesPerStepJ);
 
 		json_t *runningJ = json_object_get(rootJ, "running");
 		if (runningJ)
@@ -2879,7 +2874,7 @@ struct TwinSlideWidget : ModuleWidget {
 			for (int i = 0; i < 5; i++) {
 				menu->addChild(createCheckMenuItem(ppsLabels[i], "",
 					[=]() { return module->defaultPulsesPerStep == ppsValues[i]; },
-					[=]() { module->defaultPulsesPerStep = ppsValues[i]; }
+					[=]() { module->defaultPulsesPerStep = ppsValues[i]; module->pulsesPerStep = ppsValues[i]; TwinSlideSettings::defaultPulsesPerStep = ppsValues[i]; }
 				));
 			}
 		}));

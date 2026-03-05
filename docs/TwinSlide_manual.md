@@ -123,7 +123,11 @@ Short press cycles through display modes:
 2. **Run Mode** - Select playback pattern
 3. **Clock Div** - Set clock division (sequence mode only)
 
-Long press (hold): Access PPQN (pulses per quarter note) setting. Available values: 1, 4, 6, 12, 24. Default is 24 PPS. TwinSlide expects a 96 PPQN clock source for 16th note step resolution at 24 PPS.
+Holding the MODE button for two seconds allows the selection of the clock resolution, in number of pulses per step (PPS). When set to a value greater than 1, which unlocks the advanced gate mode, the sequencer will skip this many clock pulses before advancing to the next step. In such cases, a multiplied clock must be supplied in order to keep the same tempo in the sequencer. In advanced gate mode, the pulse width of the clock is not used and has no effect on the gates.
+
+All PPS settings will work for the full gate (the F key) as well as triggers (the B key). Triggers are 10ms in duration. A full gate remains high during the entire step, and if the next step's gate is active, then the gate continues without interruption into that next step. When PPS requirements are not met, the sequencer will not allow invalid gate types to be entered on the keyboard. For example, if PPS is set to 6, then the 75% gate (the E key) can not be selected. Selecting a PPS value of 12 or 24 will ensure that all gate types can be used (i.e. that all PPS requirements are met irrespective of the gate type chosen).
+
+The PPS value can also be changed from the right-click context menu under Sequencer Settings → Default clock resolution. Changing the value there will apply immediately to the current instance and is saved globally as the default for all new instances and Initialize actions, persisting across Rack sessions.
 
 ### Transpose/Rotate Button (Left of Encoder)
 
@@ -708,7 +712,7 @@ See [Acid Pattern Generator](#acid-pattern-generator) section.
 
 | Option | Values | Description |
 |--------|--------|-------------|
-| Default clock resolution | x1/x4/x6/x12/x24 | Default PPS used on Initialize and new instances |
+| Default clock resolution | x1/x4/x6/x12/x24 | Applies immediately and is saved globally as the default for all new instances and Initialize actions |
 | Reset on run | On/Off | Reset sequence when Run is triggered |
 | Retrigger gates on reset | No/Yes/Only when Run unconnected | Gate behavior on reset |
 | Hold tied notes | On/Off | Sustain notes through tied steps |
