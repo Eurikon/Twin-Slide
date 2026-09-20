@@ -6,81 +6,150 @@
 
 #include "../TwinSlidePlugin.hpp"
 #include "Components.hpp"
+#include <atomic>
+#include <cmath>
+#include <cstring>
 
 using namespace rack;
 
 
-// Temperament preset data
-struct TemperamentPreset {
-	const char* name;
-	float cents[12];
+enum TemperamentCategory {
+	TEMPERAMENT_INITIALIZE,
+	TEMPERAMENT_WESTERN,
+	TEMPERAMENT_JUST,
+	TEMPERAMENT_EDO
 };
 
-static const TemperamentPreset TEMPERAMENT_PRESETS[] = {
-	// Initialize (resets to 12-TET)
-	{"INITIALIZE", {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-	// Western historical
-	{"JUST", {0, 11.7, 3.9, 15.6, -13.7, -2.0, -9.8, 2.0, 13.7, -15.6, 17.6, -11.7}},
-	{"PYTH", {0, -9.8, 3.9, -5.9, 7.8, -2.0, -11.7, 2.0, -7.8, 5.9, -3.9, 9.8}},
-	{"MEAN1/4", {0, -24.0, -6.8, 10.3, -13.7, 3.4, -20.5, -3.4, -27.4, -10.3, 6.8, -17.1}},
-	{"MEAN1/6", {0, -14.0, -4.0, 6.0, -8.0, 2.0, -12.0, -2.0, -16.0, -6.0, 4.0, -10.0}},
-	{"WERCK3", {0, -10.0, -8.0, -6.0, -10.0, -2.0, -12.0, -4.0, -8.0, -12.0, -4.0, -8.0}},
-	{"WERCK4", {0, -8.0, -4.0, -8.0, -4.0, 2.0, -6.0, -2.0, -10.0, -2.0, -6.0, -2.0}},
-	{"KIRN3", {0, -10.0, -7.0, -3.0, -14.0, -2.0, -12.0, -4.0, -8.0, -11.0, 0.0, -12.0}},
-	{"VALLOT", {0, -6.0, -4.0, -2.0, -8.0, 0.0, -6.0, -2.0, -4.0, -6.0, 0.0, -6.0}},
-	{"YOUNG", {0, -6.0, -4.0, -2.0, -8.0, 2.0, -8.0, -2.0, -4.0, -6.0, 0.0, -6.0}},
-	{"KELLNR", {0, -9.0, -5.0, -3.0, -10.0, 0.0, -9.0, -2.0, -7.0, -7.0, -2.0, -7.0}},
-	{"BARNES", {0, -8.0, -6.0, -4.0, -10.0, 0.0, -10.0, -2.0, -6.0, -8.0, -2.0, -8.0}},
-	// Extended equal divisions
-	{"17-TET", {0, -29.0, -6.0, 18.0, -12.0, 12.0, -35.0, 6.0, -24.0, 24.0, -18.0, 6.0}},
-	{"19-TET", {0, -37.0, -11.0, 16.0, -21.0, 5.0, -32.0, -5.0, -42.0, 11.0, -26.0, 0.0}},
-	{"22-TET", {0, -18.0, 9.0, -9.0, 0.0, 18.0, -27.0, 0.0, -18.0, 9.0, -9.0, 18.0}},
-	{"24-TET", {0, -50.0, 0.0, -50.0, 0.0, -50.0, 0.0, 0.0, -50.0, 0.0, -50.0, 0.0}},
-	{"31-TET", {0, -13.0, -3.0, 6.0, -10.0, 3.0, -13.0, -3.0, -16.0, 3.0, -10.0, 0.0}},
-	{"53-TET", {0, -9.0, 4.0, -6.0, -2.0, 2.0, -11.0, 2.0, -8.0, 6.0, -4.0, 0.0}},
-	// Arabic maqam (Egyptian/Syrian measured values)
-	{"RAST-E", {0, 4.0, 4.0, 45.0, -2.0, 2.0, 2.0, 2.0, 4.0, 45.0, 0.0, -10.0}},
-	{"RAST-S", {0, 4.0, 4.0, 53.0, -2.0, 2.0, 2.0, 2.0, 4.0, 53.0, -4.0, -10.0}},
-	{"BAYATI", {0, 51.0, 4.0, 16.0, -14.0, -2.0, 51.0, 2.0, 51.0, 16.0, 18.0, -12.0}},
-	{"SABA", {0, 51.0, 4.0, 35.0, -14.0, 0.0, 51.0, 2.0, 51.0, 40.0, 0.0, -10.0}},
-	{"HIJAZ", {0, 20.0, 4.0, 53.0, -14.0, -2.0, 0.0, 2.0, 20.0, 53.0, 0.0, -10.0}},
-	{"SEGAH", {0, 0.0, 4.0, 51.0, 16.0, -2.0, 0.0, 2.0, 0.0, 51.0, 18.0, -10.0}},
-	{"NAHWND", {0, 4.0, 4.0, 16.0, -14.0, -2.0, 4.0, 2.0, 4.0, 16.0, 0.0, -10.0}},
-	{"KURD", {0, 16.0, 4.0, 16.0, -14.0, -2.0, 16.0, 2.0, 16.0, 16.0, 0.0, -10.0}},
-	// Persian radif (dastgah systems)
-	{"SHUR", {0, 45.0, 4.0, 16.0, -14.0, -2.0, 45.0, 2.0, 45.0, 16.0, 0.0, -10.0}},
-	{"SEGAH-P", {0, 0.0, 4.0, 55.0, 20.0, -2.0, 0.0, 2.0, 0.0, 55.0, 20.0, -10.0}},
-	{"CHAHAR", {0, 0.0, 4.0, 55.0, -14.0, -2.0, 0.0, 2.0, 0.0, 55.0, 0.0, -10.0}},
-	{"MAHUR", {0, -6.0, 4.0, -2.0, -14.0, -2.0, -6.0, 2.0, -6.0, -2.0, 0.0, -10.0}},
-	{"HOMYUN", {0, 45.0, 4.0, 16.0, -14.0, -2.0, 0.0, 2.0, 45.0, 16.0, 0.0, -10.0}},
-	{"NAVA", {0, 4.0, 4.0, 16.0, -14.0, -2.0, 45.0, 2.0, 4.0, 16.0, 0.0, -10.0}},
-	// Sundanese gamelan
-	{"SLNDRO", {0, 0.0, 40.0, 0.0, 0.0, -20.0, 0.0, 40.0, 0.0, 0.0, -20.0, 0.0}},
-	{"PELOG", {0, 30.0, 0.0, 25.0, 0.0, -30.0, 0.0, 20.0, 0.0, 35.0, 0.0, -25.0}},
-	{"DEGUNG", {0, 0.0, 40.0, 0.0, 0.0, -60.0, 0.0, 40.0, 0.0, 0.0, -60.0, 0.0}},
-	{"MADNDA", {0, 0.0, 20.0, 0.0, 0.0, -40.0, 0.0, 20.0, 0.0, 0.0, -40.0, 0.0}},
-	// Thai/Asian
-	{"THAI", {0, 29.0, -14.0, 14.0, -29.0, 0.0, 29.0, -14.0, 14.0, -29.0, 0.0, 29.0}},
-	{"SHRUTI", {0, 12.0, -8.0, 16.0, -14.0, -2.0, 12.0, 2.0, 14.0, -16.0, 18.0, -12.0}},
-	// Harmonic series based
-	{"HARM7", {0, 0.0, 4.0, -31.0, -14.0, -2.0, -31.0, 2.0, 14.0, -16.0, -31.0, -12.0}},
-	{"HARM11", {0, 0.0, 4.0, -49.0, -14.0, -2.0, -49.0, 2.0, 14.0, -16.0, -49.0, -12.0}},
-	{"HARM13", {0, 0.0, 4.0, 41.0, -14.0, -2.0, -49.0, 2.0, 14.0, 41.0, -49.0, -12.0}},
-	// Wendy Carlos (non-octave scales mapped to 12-note)
-	{"ALPHA", {0, -22.0, 56.0, 34.0, 12.0, -10.0, -32.0, 46.0, 24.0, 2.0, -20.0, 58.0}},
-	{"BETA", {0, -36.0, 28.0, -8.0, 56.0, 20.0, -16.0, 48.0, 12.0, -24.0, 40.0, 4.0}},
-	{"GAMMA", {0, -15.0, 20.0, 5.0, -10.0, 25.0, 10.0, -5.0, 30.0, 15.0, 0.0, 35.0}},
-	// Experimental/modern
-	{"LUCY", {0, -18.0, -4.0, 10.0, -8.0, 6.0, -22.0, 2.0, -16.0, -2.0, 12.0, -6.0}},
-	{"GOLDEN", {0, -10.0, 18.0, -8.0, 10.0, -18.0, 0.0, 18.0, -10.0, 8.0, -18.0, 10.0}},
-	{"BOHLEN", {0, 46.0, -7.0, 39.0, -14.0, 32.0, -21.0, 25.0, -28.0, 18.0, -35.0, 11.0}}
+enum TemperamentKind {
+	TEMPERAMENT_CENTS,
+	TEMPERAMENT_RATIOS,
+	TEMPERAMENT_EDO_MAP
 };
-static const int NUM_TEMPERAMENTS = 47;
+
+struct TuningRatio {
+	int numerator;
+	int denominator;
+};
+
+struct TemperamentPreset {
+	const char* id;
+	const char* name;
+	TemperamentCategory category;
+	TemperamentKind kind;
+	const float* cents;
+	const TuningRatio* ratios;
+	int edo;
+	int legacyIndex;
+};
+
+static const float INITIALIZE_CENTS[12] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+static const float PYTH_CENTS[12] = {0.0f, 13.68501f, 3.91f, -5.865f, 7.82f, -1.955f, 11.73001f, 1.955f, 15.64001f, 5.865f, -3.91f, 9.775f};
+static const float MEAN_QUARTER_CENTS[12] = {0.0f, -23.951f, -6.84314f, 10.26471f, -13.68629f, 3.42157f, -20.52943f, -3.42157f, -27.37257f, -10.26471f, 6.84314f, -17.10786f};
+static const float MEAN_SIXTH_CENTS[12] = {0.0f, -11.40567f, -3.25876f, 4.88814f, -6.51752f, 1.62938f, -9.77628f, -1.62938f, -13.03505f, -4.88814f, 3.25876f, -8.1469f};
+static const float WERCKMEISTER_III_CENTS[12] = {0.0f, -9.775f, -7.82f, -5.865f, -9.775f, -1.955f, -11.73001f, -3.91f, -7.82f, -11.73001f, -3.91f, -7.82f};
+static const float WERCKMEISTER_IV_CENTS[12] = {0.0f, -17.59501f, -3.91f, -5.865f, -7.82f, -1.955f, -11.73001f, -5.865f, -15.64001f, -9.775f, 3.91f, -13.68501f};
+static const float KIRNBERGER_III_CENTS[12] = {0.0f, -7.82128f, -6.84314f, -5.865f, -13.68629f, -1.955f, -9.77628f, -3.42157f, -5.86628f, -10.26471f, -3.91f, -11.73129f};
+static const float VALLOTTI_CENTS[12] = {0.0f, -5.865f, -3.91f, -1.955f, -7.82f, 1.955f, -7.82f, -1.955f, -3.91f, -5.865f, 0.0f, -9.775f};
+static const float YOUNG_CENTS[12] = {0.0f, -9.775f, -3.91f, -5.865f, -7.82f, -1.955f, -11.73001f, -1.955f, -7.82f, -5.865f, -3.91f, -9.775f};
+static const float KELLNER_CENTS[12] = {0.0f, -9.775f, -5.474f, -5.865f, -10.948f, -1.955f, -11.73001f, -2.737f, -7.82f, -8.211f, -3.91f, -8.993f};
+static const float BARNES_CENTS[12] = {0.0f, -5.865f, -3.91f, -1.955f, -7.82f, 1.955f, -7.82f, -1.955f, -3.91f, -5.865f, 0.0f, -5.865f};
+
+static const TuningRatio JUST_5_LIMIT_RATIOS[12] = {{1, 1}, {16, 15}, {9, 8}, {6, 5}, {5, 4}, {4, 3}, {45, 32}, {3, 2}, {8, 5}, {5, 3}, {9, 5}, {15, 8}};
+static const TuningRatio JUST_7_LIMIT_RATIOS[12] = {{1, 1}, {21, 20}, {9, 8}, {7, 6}, {5, 4}, {4, 3}, {7, 5}, {3, 2}, {14, 9}, {5, 3}, {7, 4}, {15, 8}};
+static const TuningRatio JUST_11_LIMIT_RATIOS[12] = {{1, 1}, {33, 32}, {9, 8}, {7, 6}, {5, 4}, {4, 3}, {11, 8}, {3, 2}, {14, 9}, {5, 3}, {7, 4}, {15, 8}};
+static const TuningRatio CARLOS_SUPER_JUST_RATIOS[12] = {{1, 1}, {17, 16}, {9, 8}, {6, 5}, {5, 4}, {4, 3}, {11, 8}, {3, 2}, {13, 8}, {5, 3}, {7, 4}, {15, 8}};
+
+static const TemperamentPreset TEMPERAMENT_PRESETS[] = {
+	{"initialize", "INITIALIZE", TEMPERAMENT_INITIALIZE, TEMPERAMENT_CENTS, INITIALIZE_CENTS, nullptr, 0, 0},
+	{"western.pythagorean", "PYTH", TEMPERAMENT_WESTERN, TEMPERAMENT_CENTS, PYTH_CENTS, nullptr, 0, 2},
+	{"western.meantone-quarter", "MEAN1/4", TEMPERAMENT_WESTERN, TEMPERAMENT_CENTS, MEAN_QUARTER_CENTS, nullptr, 0, 3},
+	{"western.meantone-sixth", "MEAN1/6", TEMPERAMENT_WESTERN, TEMPERAMENT_CENTS, MEAN_SIXTH_CENTS, nullptr, 0, 4},
+	{"western.werckmeister-iii", "WERCK3", TEMPERAMENT_WESTERN, TEMPERAMENT_CENTS, WERCKMEISTER_III_CENTS, nullptr, 0, 5},
+	{"western.werckmeister-iv", "WERCK4", TEMPERAMENT_WESTERN, TEMPERAMENT_CENTS, WERCKMEISTER_IV_CENTS, nullptr, 0, 6},
+	{"western.kirnberger-iii", "KIRN3", TEMPERAMENT_WESTERN, TEMPERAMENT_CENTS, KIRNBERGER_III_CENTS, nullptr, 0, 7},
+	{"western.vallotti", "VALLOT", TEMPERAMENT_WESTERN, TEMPERAMENT_CENTS, VALLOTTI_CENTS, nullptr, 0, 8},
+	{"western.young", "YOUNG", TEMPERAMENT_WESTERN, TEMPERAMENT_CENTS, YOUNG_CENTS, nullptr, 0, 9},
+	{"western.kellner", "KELLNR", TEMPERAMENT_WESTERN, TEMPERAMENT_CENTS, KELLNER_CENTS, nullptr, 0, 10},
+	{"western.barnes", "BARNES", TEMPERAMENT_WESTERN, TEMPERAMENT_CENTS, BARNES_CENTS, nullptr, 0, 11},
+	{"just.5-limit", "JI 5-LIMIT", TEMPERAMENT_JUST, TEMPERAMENT_RATIOS, nullptr, JUST_5_LIMIT_RATIOS, 0, 1},
+	{"just.7-limit", "JI 7-LIMIT", TEMPERAMENT_JUST, TEMPERAMENT_RATIOS, nullptr, JUST_7_LIMIT_RATIOS, 0, 38},
+	{"just.11-limit", "JI 11-LIMIT", TEMPERAMENT_JUST, TEMPERAMENT_RATIOS, nullptr, JUST_11_LIMIT_RATIOS, 0, 39},
+	{"just.carlos-super", "CARLOS SJ", TEMPERAMENT_JUST, TEMPERAMENT_RATIOS, nullptr, CARLOS_SUPER_JUST_RATIOS, 0, 0},
+	{"edo.17-nearest", "17-EDO MAP", TEMPERAMENT_EDO, TEMPERAMENT_EDO_MAP, nullptr, nullptr, 17, 12},
+	{"edo.19-nearest", "19-EDO MAP", TEMPERAMENT_EDO, TEMPERAMENT_EDO_MAP, nullptr, nullptr, 19, 13},
+	{"edo.22-nearest", "22-EDO MAP", TEMPERAMENT_EDO, TEMPERAMENT_EDO_MAP, nullptr, nullptr, 22, 14},
+	{"edo.26-nearest", "26-EDO MAP", TEMPERAMENT_EDO, TEMPERAMENT_EDO_MAP, nullptr, nullptr, 26, 0},
+	{"edo.27-nearest", "27-EDO MAP", TEMPERAMENT_EDO, TEMPERAMENT_EDO_MAP, nullptr, nullptr, 27, 0},
+	{"edo.31-nearest", "31-EDO MAP", TEMPERAMENT_EDO, TEMPERAMENT_EDO_MAP, nullptr, nullptr, 31, 16},
+	{"edo.34-nearest", "34-EDO MAP", TEMPERAMENT_EDO, TEMPERAMENT_EDO_MAP, nullptr, nullptr, 34, 0},
+	{"edo.53-nearest", "53-EDO MAP", TEMPERAMENT_EDO, TEMPERAMENT_EDO_MAP, nullptr, nullptr, 53, 17}
+};
+
+static const int NUM_TEMPERAMENTS = sizeof(TEMPERAMENT_PRESETS) / sizeof(TEMPERAMENT_PRESETS[0]);
+static const int CUSTOM_TEMPERAMENT = -1;
+
+static bool isValidTemperamentPreset(int presetIndex) {
+	return presetIndex >= 0 && presetIndex < NUM_TEMPERAMENTS;
+}
+
+static float getTemperamentPresetCents(int presetIndex, int pitchClass) {
+	if (!isValidTemperamentPreset(presetIndex) || pitchClass < 0 || pitchClass >= 12)
+		return 0.0f;
+	const TemperamentPreset& preset = TEMPERAMENT_PRESETS[presetIndex];
+	if (preset.kind == TEMPERAMENT_CENTS)
+		return preset.cents[pitchClass];
+	if (preset.kind == TEMPERAMENT_RATIOS) {
+		const TuningRatio& ratio = preset.ratios[pitchClass];
+		return 1200.0f * std::log2((float)ratio.numerator / (float)ratio.denominator) - 100.0f * pitchClass;
+	}
+	int scaledDegree = pitchClass * preset.edo;
+	int degree = scaledDegree / 12;
+	// Exact half-degree ties stay below so every EDO map has one deterministic rule.
+	if ((scaledDegree % 12) > 6)
+		degree++;
+	return 1200.0f * degree / preset.edo - 100.0f * pitchClass;
+}
+
+static int findTemperamentPresetById(const char* id) {
+	if (!id)
+		return CUSTOM_TEMPERAMENT;
+	for (int i = 0; i < NUM_TEMPERAMENTS; i++) {
+		if (std::strcmp(id, TEMPERAMENT_PRESETS[i].id) == 0)
+			return i;
+	}
+	return CUSTOM_TEMPERAMENT;
+}
+
+static int findTemperamentPresetByLegacyIndex(int legacyIndex) {
+	for (int i = 0; i < NUM_TEMPERAMENTS; i++) {
+		if (TEMPERAMENT_PRESETS[i].legacyIndex == legacyIndex && (legacyIndex != 0 || i == 0))
+			return i;
+	}
+	return CUSTOM_TEMPERAMENT;
+}
+
+static bool temperamentPresetMatches(const float* cents, int presetIndex, float tolerance = 0.001f) {
+	if (!cents || !isValidTemperamentPreset(presetIndex))
+		return false;
+	for (int i = 0; i < 12; i++) {
+		if (std::fabs(cents[i] - getTemperamentPresetCents(presetIndex, i)) > tolerance)
+			return false;
+	}
+	return true;
+}
+
+static int findMatchingTemperamentPreset(const float* cents) {
+	for (int i = 0; i < NUM_TEMPERAMENTS; i++) {
+		if (temperamentPresetMatches(cents, i))
+			return i;
+	}
+	return CUSTOM_TEMPERAMENT;
+}
 
 
 struct TemperamentSelector : OpaqueWidget {
-	int* presetIndex = nullptr;
-	float* microtuningCents = nullptr;
+	std::atomic<int>* currentPreset = nullptr;
+	std::atomic<int>* pendingPreset = nullptr;
 	bool leftPressed = false;
 	bool rightPressed = false;
 
@@ -126,8 +195,8 @@ struct TemperamentSelector : OpaqueWidget {
 		nvgStrokeWidth(args.vg, 0.3f);
 		nvgStroke(args.vg);
 
-		int idx = presetIndex ? *presetIndex : 0;
-		const char* name = TEMPERAMENT_PRESETS[idx].name;
+		int idx = currentPreset ? currentPreset->load(std::memory_order_relaxed) : 0;
+		const char* name = isValidTemperamentPreset(idx) ? TEMPERAMENT_PRESETS[idx].name : "CUSTOM";
 
 		std::shared_ptr<Font> font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/Sono/static/Sono_Proportional-Medium.ttf"));
 		if (font) {
@@ -144,16 +213,16 @@ struct TemperamentSelector : OpaqueWidget {
 	}
 
 	void applyPreset(int idx) {
-		if (!presetIndex || !microtuningCents) return;
-		*presetIndex = idx;
-		for (int i = 0; i < 12; i++) {
-			microtuningCents[i] = TEMPERAMENT_PRESETS[idx].cents[i];
-		}
+		if (!pendingPreset || !isValidTemperamentPreset(idx))
+			return;
+		pendingPreset->store(idx, std::memory_order_relaxed);
 	}
 
-	void createPresetSubmenu(ui::Menu* menu, const char* label, int startIdx, int endIdx) {
+	void createPresetSubmenu(ui::Menu* menu, const char* label, TemperamentCategory category) {
 		menu->addChild(createSubmenuItem(label, "", [=](ui::Menu* subMenu) {
-			for (int i = startIdx; i <= endIdx; i++) {
+			for (int i = 0; i < NUM_TEMPERAMENTS; i++) {
+				if (TEMPERAMENT_PRESETS[i].category != category)
+					continue;
 				int idx = i;
 				subMenu->addChild(createMenuItem(TEMPERAMENT_PRESETS[i].name, "", [=]() {
 					applyPreset(idx);
@@ -173,35 +242,24 @@ struct TemperamentSelector : OpaqueWidget {
 					rightPressed = true;
 				}
 
-				if (!presetIndex || !microtuningCents) {
+				if (!currentPreset || !pendingPreset) {
 					e.consume(this);
 					return;
 				}
 
+				int current = currentPreset->load(std::memory_order_relaxed);
 				if (e.pos.x < arrowZone) {
-					*presetIndex = (*presetIndex - 1 + NUM_TEMPERAMENTS) % NUM_TEMPERAMENTS;
-					for (int i = 0; i < 12; i++) {
-						microtuningCents[i] = TEMPERAMENT_PRESETS[*presetIndex].cents[i];
-					}
+					applyPreset(isValidTemperamentPreset(current) ? (current - 1 + NUM_TEMPERAMENTS) % NUM_TEMPERAMENTS : NUM_TEMPERAMENTS - 1);
 				} else if (e.pos.x > box.size.x - arrowZone) {
-					*presetIndex = (*presetIndex + 1) % NUM_TEMPERAMENTS;
-					for (int i = 0; i < 12; i++) {
-						microtuningCents[i] = TEMPERAMENT_PRESETS[*presetIndex].cents[i];
-					}
+					applyPreset(isValidTemperamentPreset(current) ? (current + 1) % NUM_TEMPERAMENTS : 0);
 				} else {
 					ui::Menu* menu = createMenu();
-					menu->addChild(createMenuLabel("Temperaments"));
+					menu->addChild(createMenuLabel("Microtuning presets"));
 					menu->addChild(new MenuSeparator());
 					menu->addChild(createMenuItem("Initialize (12-TET)", "", [=]() { applyPreset(0); }));
-					createPresetSubmenu(menu, "Western Historical", 1, 11);
-					createPresetSubmenu(menu, "Extended Equal", 12, 17);
-					createPresetSubmenu(menu, "Arabic Maqam", 18, 25);
-					createPresetSubmenu(menu, "Persian Radif", 26, 31);
-					createPresetSubmenu(menu, "Sundanese Gamelan", 32, 35);
-					createPresetSubmenu(menu, "Thai/Asian", 36, 37);
-					createPresetSubmenu(menu, "Harmonic Series", 38, 40);
-					createPresetSubmenu(menu, "Wendy Carlos", 41, 43);
-					createPresetSubmenu(menu, "Experimental", 44, 46);
+					createPresetSubmenu(menu, "Western Historical", TEMPERAMENT_WESTERN);
+					createPresetSubmenu(menu, "Just Intonation", TEMPERAMENT_JUST);
+					createPresetSubmenu(menu, "EDO Maps", TEMPERAMENT_EDO);
 				}
 				e.consume(this);
 			} else if (e.action == GLFW_RELEASE) {
@@ -219,7 +277,7 @@ struct TemperamentSelector : OpaqueWidget {
 
 
 struct MicroKeyboard : OpaqueWidget {
-	int* selectedKey = nullptr;
+	std::atomic<int>* selectedKey = nullptr;
 
 	static constexpr float WIDTH_MM = 32.0f;
 	static constexpr float HEIGHT_MM = 8.0f;
@@ -245,7 +303,7 @@ struct MicroKeyboard : OpaqueWidget {
 		float blackKeyWidth = whiteKeyWidth * 0.6f;
 		float blackKeyHeight = whiteKeyHeight * 0.6f;
 
-		int selected = selectedKey ? *selectedKey : -1;
+		int selected = selectedKey ? selectedKey->load(std::memory_order_relaxed) : -1;
 
 		for (int i = 0; i < 7; i++) {
 			float x = i * whiteKeyWidth;
@@ -295,7 +353,7 @@ struct MicroKeyboard : OpaqueWidget {
 					int pos = blackKeyPositions[i];
 					float keyX = (pos + 1) * whiteKeyWidth - blackKeyWidth / 2.0f;
 					if (x >= keyX && x < keyX + blackKeyWidth) {
-						if (selectedKey) *selectedKey = blackKeyNotes[i];
+						if (selectedKey) selectedKey->store(blackKeyNotes[i], std::memory_order_relaxed);
 						e.consume(this);
 						return;
 					}
@@ -304,7 +362,7 @@ struct MicroKeyboard : OpaqueWidget {
 
 			int whiteKeyIndex = (int)(x / whiteKeyWidth);
 			if (whiteKeyIndex >= 0 && whiteKeyIndex < 7) {
-				if (selectedKey) *selectedKey = whiteKeyNotes[whiteKeyIndex];
+				if (selectedKey) selectedKey->store(whiteKeyNotes[whiteKeyIndex], std::memory_order_relaxed);
 				e.consume(this);
 			}
 		}

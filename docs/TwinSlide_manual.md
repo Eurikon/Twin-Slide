@@ -3,7 +3,7 @@
 **Twisted Cable - Twin Slide**
 Dual Acid Bass Synthesizer for VCV Rack
 
-Version 2.1.5 | 03-03-2026
+Version 2.1.7 | 20-09-2026
 
 ---
 
@@ -127,7 +127,7 @@ Holding the MODE button for two seconds allows the selection of the clock resolu
 
 All PPS settings will work for the full gate (the F key) as well as triggers (the B key). Triggers are 10ms in duration. A full gate remains high during the entire step, and if the next step's gate is active, then the gate continues without interruption into that next step. When PPS requirements are not met, the sequencer will not allow invalid gate types to be entered on the keyboard. For example, if PPS is set to 6, then the 75% gate (the E key) can not be selected. Selecting a PPS value of 12 or 24 will ensure that all gate types can be used (i.e. that all PPS requirements are met irrespective of the gate type chosen).
 
-The PPS value can also be changed from the right-click context menu under Sequencer Settings → Default clock resolution. Changing the value there will apply immediately to the current instance and is saved globally as the default for all new instances and Initialize actions, persisting across Rack sessions.
+The PPS value can also be changed from the right-click context menu under Sequencer Settings → Default PPS. The choices are 1, 4, 6, 12, and 24 pulses per step. Changing the value there will apply immediately to the current instance and is saved globally as the default for all new instances and Initialize actions, persisting across Rack sessions.
 
 ### Transpose/Rotate Button (Left of Encoder)
 
@@ -460,7 +460,7 @@ By default, the seed auto-increments after each generation (wraps at 999). This 
 
 ## Microtuning
 
-Twin Slide includes a complete microtuning system for alternative tunings and temperaments.
+Twin Slide provides a 12-key, octave-repeating tuning map. Each chromatic pitch class has an independent cent offset, rooted on C and repeated every 1200 cents.
 
 ### Microtuning Controls
 
@@ -478,19 +478,25 @@ Located on the MicroKeyboard widget:
 2. Turn the Cents knob to adjust that note's tuning
 3. Repeat for each note requiring adjustment
 
+Manual changes set the preset display to **CUSTOM**. The selected key chooses which pitch class the Cents knob edits; it does not change the tuning root.
+
 ### Temperament Presets
 
-Access via context menu → Microtuning
+Click the preset name to open its menu, or use the left and right arrows to step through presets.
 
-**47 temperament presets** organized by category:
+**23 tuning maps** are organized into four categories. Preset values repeat at the octave and use C as their root.
+
+**Initialize:**
+
+| Preset | Description |
+|--------|-------------|
+| INITIALIZE | Reset all twelve offsets to 12-TET |
 
 **Western Historical:**
 
 | Preset | Description |
 |--------|-------------|
-| INITIALIZE | Reset to 12-TET (all zeros) |
-| JUST | Just intonation - pure intervals |
-| PYTH | Pythagorean - based on perfect fifths |
+| PYTH | Pythagorean 12-note scale |
 | MEAN1/4 | Quarter-comma meantone |
 | MEAN1/6 | Sixth-comma meantone |
 | WERCK3 | Werckmeister III |
@@ -501,80 +507,37 @@ Access via context menu → Microtuning
 | KELLNR | Kellner |
 | BARNES | Barnes-Bach |
 
-**Extended Equal Divisions:**
+The Western values follow the corresponding definitions in the Huygens-Fokker Scala scale archive.
+
+**Just Intonation:**
 
 | Preset | Description |
 |--------|-------------|
-| 17-TET | 17 equal divisions of octave |
-| 19-TET | 19 equal divisions of octave |
-| 22-TET | 22 equal divisions of octave |
-| 24-TET | Quarter-tone (24 equal divisions) |
-| 31-TET | 31 equal divisions of octave |
-| 53-TET | 53 equal divisions of octave |
+| JI 5-LIMIT | Twelve ratios using prime factors through 5 |
+| JI 7-LIMIT | Twelve ratios using prime factors through 7 |
+| JI 11-LIMIT | Twelve ratios using prime factors through 11 |
+| CARLOS SJ | Wendy Carlos Super Just |
 
-**Arabic Maqam:**
+These are fixed C-rooted maps. Transposing a sequence does not move the Just Intonation root.
 
-| Preset | Description |
-|--------|-------------|
-| RAST-E | Rast (Egyptian) |
-| RAST-S | Rast (Syrian) |
-| BAYATI | Bayati maqam |
-| SABA | Saba maqam |
-| HIJAZ | Hijaz maqam |
-| SEGAH | Segah maqam |
-| NAHWND | Nahawand maqam |
-| KURD | Kurd maqam |
-
-**Persian Radif:**
+**EDO Maps:**
 
 | Preset | Description |
 |--------|-------------|
-| SHUR | Shur dastgah |
-| SEGAH-P | Segah (Persian) |
-| CHAHAR | Chahargah |
-| MAHUR | Mahur dastgah |
-| HOMYUN | Homayun dastgah |
-| NAVA | Nava dastgah |
+| 17-EDO MAP | Nearest degrees of 17 equal divisions |
+| 19-EDO MAP | Nearest degrees of 19 equal divisions |
+| 22-EDO MAP | Nearest degrees of 22 equal divisions |
+| 26-EDO MAP | Nearest degrees of 26 equal divisions |
+| 27-EDO MAP | Nearest degrees of 27 equal divisions |
+| 31-EDO MAP | Nearest degrees of 31 equal divisions |
+| 34-EDO MAP | Nearest degrees of 34 equal divisions |
+| 53-EDO MAP | Nearest degrees of 53 equal divisions |
 
-**Sundanese Gamelan:**
+Each EDO map sends the twelve chromatic pitch classes to their nearest EDO degrees. Exact half-degree ties use the lower degree. These presets provide twelve-note mappings into an EDO; they do not expose every degree of that EDO.
 
-| Preset | Description |
-|--------|-------------|
-| SLNDRO | Slendro |
-| PELOG | Pelog |
-| DEGUNG | Degung |
-| MADNDA | Madenda |
+24-EDO is omitted because its nearest degrees for all twelve chromatic notes are identical to 12-TET. Non-octave systems such as Carlos Alpha, Beta, Gamma, and Bohlen-Pierce are not included because this section repeats every 1200 cents.
 
-**Thai/Asian:**
-
-| Preset | Description |
-|--------|-------------|
-| THAI | Thai 7-tone |
-| SHRUTI | Indian shruti |
-
-**Harmonic Series:**
-
-| Preset | Description |
-|--------|-------------|
-| HARM7 | 7-limit just intonation |
-| HARM11 | 11-limit just intonation |
-| HARM13 | 13-limit just intonation |
-
-**Wendy Carlos:**
-
-| Preset | Description |
-|--------|-------------|
-| ALPHA | Carlos Alpha |
-| BETA | Carlos Beta |
-| GAMMA | Carlos Gamma |
-
-**Experimental/Modern:**
-
-| Preset | Description |
-|--------|-------------|
-| LUCY | LucyTuning |
-| GOLDEN | Golden ratio tuning |
-| BOHLEN | Bohlen-Pierce (tritave) |
+Older patches retain their saved cent values. If those values do not exactly match a current preset, the display shows **CUSTOM**.
 
 ---
 
@@ -712,7 +675,7 @@ See [Acid Pattern Generator](#acid-pattern-generator) section.
 
 | Option | Values | Description |
 |--------|--------|-------------|
-| Default clock resolution | x1/x4/x6/x12/x24 | Applies immediately and is saved globally as the default for all new instances and Initialize actions |
+| Default PPS | 1/4/6/12/24 | Pulses per step; applies immediately and is saved globally as the default for all new instances and Initialize actions |
 | Reset on run | On/Off | Reset sequence when Run is triggered |
 | Retrigger gates on reset | No/Yes/Only when Run unconnected | Gate behavior on reset |
 | Hold tied notes | On/Off | Sustain notes through tied steps |

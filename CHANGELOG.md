@@ -1,5 +1,29 @@
 # TwinSlide Changelog
 
+## [2.1.7] - 20-09-2026
+
+### Audio Engine
+
+- Added resonance bass compensation through the filter feedback high-pass path.
+- Limited final synth output to 10 V with level-dependent saturation.
+- Increased oscillator and filter oversampling to 4x with elliptic anti-alias filtering.
+- Added amplitude-envelope de-clicking and moved amplitude control after the filter.
+- Corrected envelope attack behaviour and set accented-note release to 50 ms.
+
+### Sequencer and I/O
+
+- Updated the default pulses-per-step behaviour and sequence copy/paste workflow.
+- Renamed the clock-resolution menu to Default PPS and removed multiplier-style value labels.
+- Exposed the RND icon as a mappable momentary Rack parameter and moved its action to the engine thread.
+- Extended expander communication with transpose, fine-tune, and accent signals.
+- Added plugin metadata URLs and corrected declarations.
+
+### Microtuning
+
+- Replaced unsupported and ambiguous presets with sourced Western, ratio-derived Just Intonation, and generated 12-key EDO maps.
+- Added stable preset identities, CUSTOM state after manual edits, validated legacy loading, and engine-thread preset application.
+- Preserved saved cent values from older patches and corrected the first-refresh cents-knob synchronization.
+
 ## [2.1.0] - 26-12-2024
 
 ### Release Candidate 1

@@ -9,6 +9,8 @@ plugin.dylib
 # Local development files (system-specific)
 Makefile.local
 CLAUDE.md
+AGENTS.md
+.claude/settings.local.json
 
 # macOS
 .DS_Store
@@ -33,3 +35,11 @@ testing/
 
 # Archived docs
 docs/_archived/
+
+# Project state system (auto-managed by ~/.claude/hooks/project-state-loader.sh)
+STATE.md
+TODOS.md
+.continue-here.md
+.claude/.state-session-start
+.claude/.state-stop-blocked
+.claude/.state-gitignored

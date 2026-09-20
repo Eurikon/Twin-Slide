@@ -49,20 +49,20 @@ struct TwinSlideExpander : Module {
 	TwinSlideExpander() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 
-		configInput(CVA_INPUT, "Track A CV");
+		configInput(CVA_INPUT, "Track A V/Oct");
 		configInput(GATEA_INPUT, "Track A Gate");
 		configInput(SLIDEA_INPUT, "Track A Slide");
 		configInput(FINEA_INPUT, "Track A Fine Tune CV");
-		configInput(CVB_INPUT, "Track B CV");
+		configInput(CVB_INPUT, "Track B V/Oct");
 		configInput(GATEB_INPUT, "Track B Gate");
 		configInput(SLIDEB_INPUT, "Track B Slide");
 		configInput(FINEB_INPUT, "Track B Fine Tune CV");
 		configInput(TRANSPOSE_INPUT, "Transpose CV");
 
-		configOutput(CVA_OUTPUT, "Track A CV");
+		configOutput(CVA_OUTPUT, "Track A V/Oct");
 		configOutput(GATEA_OUTPUT, "Track A Gate");
 		configOutput(SLIDEA_OUTPUT, "Track A Slide");
-		configOutput(CVB_OUTPUT, "Track B CV");
+		configOutput(CVB_OUTPUT, "Track B V/Oct");
 		configOutput(GATEB_OUTPUT, "Track B Gate");
 		configOutput(SLIDEB_OUTPUT, "Track B Slide");
 		configOutput(ACCA_OUTPUT, "Track A Accent");
@@ -197,7 +197,7 @@ struct TwinSlideExpanderWidget : ModuleWidget {
 		addInput(createInputCentered<DarkPJ301MPort>(Vec(colRight, inRow3), module, TwinSlideExpander::SLIDEB_INPUT));
 
 		// INPUT labels (ControlLabel style, 16px above jacks)
-		ControlLabel* cvAInLabel = new ControlLabel("CV");
+		ControlLabel* cvAInLabel = new ControlLabel("V/OCT");
 		cvAInLabel->box.pos = Vec(colLeft, inLabel1);
 		addChild(cvAInLabel);
 		ControlLabel* gateAInLabel = new ControlLabel("GATE");
@@ -206,7 +206,7 @@ struct TwinSlideExpanderWidget : ModuleWidget {
 		ControlLabel* slideAInLabel = new ControlLabel("SLIDE");
 		slideAInLabel->box.pos = Vec(colLeft, inLabel3);
 		addChild(slideAInLabel);
-		ControlLabel* cvBInLabel = new ControlLabel("CV");
+		ControlLabel* cvBInLabel = new ControlLabel("V/OCT");
 		cvBInLabel->box.pos = Vec(colRight, inLabel1);
 		addChild(cvBInLabel);
 		ControlLabel* gateBInLabel = new ControlLabel("GATE");
@@ -256,7 +256,7 @@ struct TwinSlideExpanderWidget : ModuleWidget {
 		addOutput(createOutputCentered<DarkPJ301MPort>(Vec(colRight, outRow3), module, TwinSlideExpander::SLIDEB_OUTPUT));
 
 		// OUTPUT labels (ControlLabel style, 16px above jacks)
-		ControlLabel* cvAOutLabel = new ControlLabel("CV");
+		ControlLabel* cvAOutLabel = new ControlLabel("V/OCT");
 		cvAOutLabel->box.pos = Vec(colLeft, outLabel1);
 		addChild(cvAOutLabel);
 		ControlLabel* gateAOutLabel = new ControlLabel("GATE");
@@ -265,7 +265,7 @@ struct TwinSlideExpanderWidget : ModuleWidget {
 		ControlLabel* slideAOutLabel = new ControlLabel("SLIDE");
 		slideAOutLabel->box.pos = Vec(colLeft, outLabel3);
 		addChild(slideAOutLabel);
-		ControlLabel* cvBOutLabel = new ControlLabel("CV");
+		ControlLabel* cvBOutLabel = new ControlLabel("V/OCT");
 		cvBOutLabel->box.pos = Vec(colRight, outLabel1);
 		addChild(cvBOutLabel);
 		ControlLabel* gateBOutLabel = new ControlLabel("GATE");

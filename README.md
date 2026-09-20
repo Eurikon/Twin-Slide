@@ -80,7 +80,8 @@ Randomize Track submenu with configurable pattern generation:
 **Microtuning:**
 - Master tuning (420-460Hz, default 440Hz)
 - Per-key cent offsets (±100 cents)
-- 47 temperament presets including Western historical, extended equal divisions, Arabic maqam, Persian radif, Sundanese gamelan, Thai/Asian, harmonic series, Wendy Carlos scales, and experimental tunings
+- 23 octave-repeating, C-rooted tuning maps: 12-TET, Western historical, Just Intonation, and nearest-degree EDO maps
+- Manual edits retain their sound and are identified as CUSTOM
 
 ### Twin Slide Expander - 8HP
 
@@ -210,7 +211,7 @@ See [LICENSE.md](LICENSE.md) for full license text.
 
 ---
 
-**Version**: 2.1.0<br />
+**Version**: 2.1.7<br />
 **Date**: 03-03-2026<br />
 **Author**: Latif Karoumi
 

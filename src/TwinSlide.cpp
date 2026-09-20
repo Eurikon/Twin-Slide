@@ -69,6 +69,7 @@ struct TwinSlide : Module {
 		REL_PARAM,
 		REL_KNOB_PARAM,
 		CLR_PARAM,
+		RANDOMIZE_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -176,8 +177,9 @@ struct TwinSlide : Module {
 	float microtuningCents[12];  // Cent offset per note (-100 to +100)
 	int microtuningOctave;       // Octave shift (-1, 0, +1)
 	float masterTuneHz;          // Master tuning (420-460Hz, default 440Hz)
-	int selectedMicroKey;        // Currently selected key for editing (0-11)
-	int temperamentPreset;       // Current temperament preset index (0-4)
+	std::atomic<int> selectedMicroKey{0};
+	std::atomic<int> temperamentPreset{0};
+	std::atomic<int> pendingTemperamentPreset{CUSTOM_TEMPERAMENT};
 	// Expert mode settings (per synth)
 	struct ExpertSettings {
 		float vcfRange = 0.0f;    // -1 to 0 (range shift), default 0
@@ -280,6 +282,7 @@ struct TwinSlide : Module {
 	Trigger copyTrigger;
 	Trigger pasteTrigger;
 	Trigger clrTrigger;
+	Trigger randomizeTrigger;
 	Trigger modeTrigger;
 	Trigger transposeTrigger;
 	Trigger tiedTrigger;
@@ -357,6 +360,7 @@ struct TwinSlide : Module {
 		configParam(COPY_PARAM, 0.0f, 1.0f, 0.0f, "Copy");
 		configParam(PASTE_PARAM, 0.0f, 1.0f, 0.0f, "Paste");
 		configParam(CLR_PARAM, 0.0f, 1.0f, 0.0f, "Clear track");
+		configButton(RANDOMIZE_PARAM, "Randomize track");
 		configSwitch(CPMODE_PARAM, 0.0f, 2.0f, 0.0f, "Copy", {"4 steps", "8 steps", "Track"});// 0.0f is top position
 
 		configParam(GATE_PARAM, 0.0f, 1.0f, 0.0f, "Gate");
@@ -477,8 +481,9 @@ struct TwinSlide : Module {
 		}
 		microtuningOctave = 0;
 		masterTuneHz = 440.0f;
-		selectedMicroKey = 0;
-		temperamentPreset = 0;
+		selectedMicroKey.store(0, std::memory_order_relaxed);
+		temperamentPreset.store(0, std::memory_order_relaxed);
+		pendingTemperamentPreset.store(CUSTOM_TEMPERAMENT, std::memory_order_relaxed);
 		// Expert mode defaults
 		expertA = {};
 		expertB = {};
@@ -501,8 +506,8 @@ struct TwinSlide : Module {
 	void resetNonJson(bool delayed) {// delay thread sensitive parts (i.e. schedule them so that process() will do them)
 		displayState = DISP_NORMAL;
 		lastTrackSwitch = 0;
-		lastSelectedMicroKey = 0;
-		lastTemperamentPreset = 0;
+		lastSelectedMicroKey = -1;
+		lastTemperamentPreset = CUSTOM_TEMPERAMENT - 1;
 		for (int i = 0; i < 16; i++) {
 			cvCPbuffer[i] = 0.0f;
 			attribCPbuffer[i].init();
@@ -727,7 +732,11 @@ struct TwinSlide : Module {
 		json_object_set_new(rootJ, "microtuningCents", microtuningCentsJ);
 		json_object_set_new(rootJ, "microtuningOctave", json_integer(microtuningOctave));
 		json_object_set_new(rootJ, "masterTuneHz", json_real(masterTuneHz));
-		json_object_set_new(rootJ, "temperamentPreset", json_integer(temperamentPreset));
+		int currentPreset = temperamentPreset.load(std::memory_order_relaxed);
+		int legacyPreset = isValidTemperamentPreset(currentPreset) ? TEMPERAMENT_PRESETS[currentPreset].legacyIndex : 0;
+		const char* presetId = isValidTemperamentPreset(currentPreset) ? TEMPERAMENT_PRESETS[currentPreset].id : "custom";
+		json_object_set_new(rootJ, "temperamentPreset", json_integer(legacyPreset));
+		json_object_set_new(rootJ, "microtuningPresetId", json_string(presetId));
 
 		json_t *expertAJ = json_object();
 		json_object_set_new(expertAJ, "vcfRange", json_real(expertA.vcfRange));
@@ -852,23 +861,48 @@ struct TwinSlide : Module {
 		if (phraseIndexEditJ)
 			phraseIndexEdit = json_integer_value(phraseIndexEditJ);
 
+		bool loadedMicrotuningCents = false;
 		json_t *microtuningCentsJ = json_object_get(rootJ, "microtuningCents");
-		if (microtuningCentsJ) {
+		if (json_is_array(microtuningCentsJ)) {
 			for (int i = 0; i < 12; i++) {
 				json_t *centsJ = json_array_get(microtuningCentsJ, i);
-				if (centsJ)
-					microtuningCents[i] = json_number_value(centsJ);
+				if (json_is_number(centsJ)) {
+					float cents = json_number_value(centsJ);
+					if (std::isfinite(cents)) {
+						microtuningCents[i] = clamp(cents, -100.0f, 100.0f);
+						loadedMicrotuningCents = true;
+					}
+				}
 			}
 		}
 		json_t *microtuningOctaveJ = json_object_get(rootJ, "microtuningOctave");
-		if (microtuningOctaveJ)
-			microtuningOctave = json_integer_value(microtuningOctaveJ);
+		if (json_is_integer(microtuningOctaveJ))
+			microtuningOctave = clamp((int)json_integer_value(microtuningOctaveJ), -1, 1);
 		json_t *masterTuneHzJ = json_object_get(rootJ, "masterTuneHz");
-		if (masterTuneHzJ)
-			masterTuneHz = json_number_value(masterTuneHzJ);
+		if (json_is_number(masterTuneHzJ)) {
+			float loadedMasterTuneHz = json_number_value(masterTuneHzJ);
+			if (std::isfinite(loadedMasterTuneHz))
+				masterTuneHz = clamp(loadedMasterTuneHz, 420.0f, 460.0f);
+		}
+
+		int resolvedPreset = findMatchingTemperamentPreset(microtuningCents);
+		json_t *presetIdJ = json_object_get(rootJ, "microtuningPresetId");
+		if (json_is_string(presetIdJ)) {
+			const char* presetId = json_string_value(presetIdJ);
+			int idPreset = findTemperamentPresetById(presetId);
+			resolvedPreset = isValidTemperamentPreset(idPreset) && temperamentPresetMatches(microtuningCents, idPreset) ? idPreset : CUSTOM_TEMPERAMENT;
+		}
 		json_t *temperamentPresetJ = json_object_get(rootJ, "temperamentPreset");
-		if (temperamentPresetJ)
-			temperamentPreset = json_integer_value(temperamentPresetJ);
+		if (!loadedMicrotuningCents && !json_is_string(presetIdJ) && json_is_integer(temperamentPresetJ)) {
+			int legacyPreset = clamp((int)json_integer_value(temperamentPresetJ), 0, 46);
+			resolvedPreset = findTemperamentPresetByLegacyIndex(legacyPreset);
+			if (isValidTemperamentPreset(resolvedPreset)) {
+				for (int i = 0; i < 12; i++)
+					microtuningCents[i] = getTemperamentPresetCents(resolvedPreset, i);
+			}
+		}
+		temperamentPreset.store(resolvedPreset, std::memory_order_relaxed);
+		pendingTemperamentPreset.store(CUSTOM_TEMPERAMENT, std::memory_order_relaxed);
 
 		json_t *expertAJ = json_object_get(rootJ, "expertA");
 		if (expertAJ) {
@@ -1071,6 +1105,8 @@ struct TwinSlide : Module {
 			}
 			displayState = DISP_NORMAL;
 		}
+		if (randomizeTrigger.process(params[RANDOMIZE_PARAM].getValue()))
+			randomizeTrack();
 
 		if (refresh.processInputs()) {
 			// Track select switch - sync stepIndexEdit when manually changed
@@ -1082,16 +1118,27 @@ struct TwinSlide : Module {
 				lastTrackSwitch = currentTrackSwitch;
 			}
 
-			// Microtuning knob sync
-			if (selectedMicroKey != lastSelectedMicroKey || temperamentPreset != lastTemperamentPreset) {
-				// Key selection or preset changed, update knob to show new cents value
-				params[MICRO_CENTS_PARAM].setValue(microtuningCents[selectedMicroKey]);
-				lastSelectedMicroKey = selectedMicroKey;
-				lastTemperamentPreset = temperamentPreset;
+			int requestedPreset = pendingTemperamentPreset.exchange(CUSTOM_TEMPERAMENT, std::memory_order_relaxed);
+			if (isValidTemperamentPreset(requestedPreset)) {
+				for (int i = 0; i < 12; i++)
+					microtuningCents[i] = getTemperamentPresetCents(requestedPreset, i);
+				temperamentPreset.store(requestedPreset, std::memory_order_relaxed);
+			}
+
+			int selectedKey = clamp(selectedMicroKey.load(std::memory_order_relaxed), 0, 11);
+			selectedMicroKey.store(selectedKey, std::memory_order_relaxed);
+			int currentPreset = temperamentPreset.load(std::memory_order_relaxed);
+			if (selectedKey != lastSelectedMicroKey || currentPreset != lastTemperamentPreset) {
+				params[MICRO_CENTS_PARAM].setValue(microtuningCents[selectedKey]);
+				lastSelectedMicroKey = selectedKey;
+				lastTemperamentPreset = currentPreset;
 			} else {
-				// Read knob and update the selected key's cents value
 				float centsKnobValue = params[MICRO_CENTS_PARAM].getValue();
-				microtuningCents[selectedMicroKey] = centsKnobValue;
+				if (std::fabs(centsKnobValue - microtuningCents[selectedKey]) > 0.0001f) {
+					microtuningCents[selectedKey] = centsKnobValue;
+					temperamentPreset.store(CUSTOM_TEMPERAMENT, std::memory_order_relaxed);
+					lastTemperamentPreset = CUSTOM_TEMPERAMENT;
+				}
 			}
 			microtuningOctave = (int)std::round(params[MICRO_OCTAVE_PARAM].getValue());
 			masterTuneHz = params[MICRO_MASTER_PARAM].getValue();
@@ -2868,9 +2915,9 @@ struct TwinSlideWidget : ModuleWidget {
 		menu->addChild(new MenuSeparator());
 		menu->addChild(createMenuLabel("Sequencer settings"));
 
-		menu->addChild(createSubmenuItem("Default clock resolution", "", [=](Menu* menu) {
+		menu->addChild(createSubmenuItem("Default PPS", "", [=](Menu* menu) {
 			const int ppsValues[] = {1, 4, 6, 12, 24};
-			const char* ppsLabels[] = {"x1", "x4", "x6", "x12", "x24"};
+			const char* ppsLabels[] = {"1", "4", "6", "12", "24"};
 			for (int i = 0; i < 5; i++) {
 				menu->addChild(createCheckMenuItem(ppsLabels[i], "",
 					[=]() { return module->defaultPulsesPerStep == ppsValues[i]; },
@@ -2924,23 +2971,13 @@ struct TwinSlideWidget : ModuleWidget {
 		}
 	};
 
-	struct DiceButton : widget::SvgWidget {
-		TwinSlide* module = NULL;
-		std::shared_ptr<window::Svg> svgNormal;
-		std::shared_ptr<window::Svg> svgPressed;
-		void onHover(const HoverEvent& e) override { e.consume(this); }
-		void onButton(const ButtonEvent& e) override {
-			if (e.button == GLFW_MOUSE_BUTTON_LEFT) {
-				if (e.action == GLFW_PRESS) {
-					setSvg(svgPressed);
-					if (module) module->randomizeTrack();
-				} else if (e.action == GLFW_RELEASE) {
-					setSvg(svgNormal);
-				}
-				e.consume(this);
-			}
+	struct DiceButton : app::SvgSwitch {
+		DiceButton() {
+			momentary = true;
+			shadow->opacity = 0.0f;
+			addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/comp/fad-random-1dice.svg")));
+			addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/comp/fad-random-1dice-pressed.svg")));
 		}
-		void onDragEnd(const DragEndEvent& e) override { setSvg(svgNormal); }
 	};
 
 	struct ConditionButton : PushButton80 {
@@ -3624,13 +3661,7 @@ struct TwinSlideWidget : ModuleWidget {
 		// Clock input
 		addInput(createDynamicPortCentered<JackPort>(VecPx(392, 226), true, module, TwinSlide::CLOCK_INPUT, mode));
 		// Dice icon above clock input
-		DiceButton* diceIcon = new DiceButton;
-		diceIcon->module = module;
-		diceIcon->svgNormal = APP->window->loadSvg(asset::plugin(pluginInstance, "res/comp/fad-random-1dice.svg"));
-		diceIcon->svgPressed = APP->window->loadSvg(asset::plugin(pluginInstance, "res/comp/fad-random-1dice-pressed.svg"));
-		diceIcon->setSvg(diceIcon->svgNormal);
-		diceIcon->box.pos = VecPx(337 - 8.5f, 147 - 8.5f);
-		addChild(diceIcon);
+		addParam(createParamCentered<DiceButton>(VecPx(337, 147), module, TwinSlide::RANDOMIZE_PARAM));
 
 		// ****** Synth control labels ******
 		ControlLabel* drvLabel = new ControlLabel("DRV");
@@ -3829,8 +3860,8 @@ struct TwinSlideWidget : ModuleWidget {
 		TemperamentSelector* tempSelector = new TemperamentSelector();
 		tempSelector->box.pos = mm2px(Vec(108.0f, 110.2f));
 		if (module) {
-			tempSelector->presetIndex = &module->temperamentPreset;
-			tempSelector->microtuningCents = module->microtuningCents;
+			tempSelector->currentPreset = &module->temperamentPreset;
+			tempSelector->pendingPreset = &module->pendingTemperamentPreset;
 		}
 		addChild(tempSelector);
 

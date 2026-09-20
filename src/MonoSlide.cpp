@@ -700,7 +700,7 @@ struct MonoSlideWidget : ModuleWidget {
 		addOutput(createOutputCentered<DarkPJ301MPort>(Vec(col4x, col3y), module, MonoSlide::AUDIO_OUTPUT));
 
 		// Labels 22px above jacks
-		ControlLabel* cvLabel = new ControlLabel("CV");
+		ControlLabel* cvLabel = new ControlLabel("V/OCT");
 		cvLabel->box.pos = Vec(col1x, col3y - 22.f);
 		addChild(cvLabel);
 		ControlLabel* gateLabel = new ControlLabel("GATE");
